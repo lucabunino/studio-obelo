@@ -1,0 +1,19 @@
+$xxs: 375px;
+$xs: 480px;
+$sm: 640px;
+$md: 768px;
+$lg: 1024px;
+$xl: 1280px;
+$xxl: 1536px;
+$xxxl: 1920px;
+
+:export {
+  xxs: $xxs;
+  xs: $xs;
+  sm: $sm;
+  md: $md;
+  lg: $lg;
+  xl: $xl;
+  xxl: $xxl;
+  xxxl: $xxxl;
+}

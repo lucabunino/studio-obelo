@@ -1,0 +1,98 @@
+<script>
+	import { page } from '$app/state'
+	import { PortableText } from '@portabletext/svelte'
+	import PortableTextStyle from '$lib/components/PortableTextStyle.svelte'
+	import { typewriter, resetTypewriter } from '$lib/utils/typewriter.js'
+	import { onMount } from 'svelte'
+    import { obelo } from '$lib/utils/obelo';
+
+	let { about } = $props()
+
+	const isOverlay = $derived(!!page.state.overlay)
+	const isFullscreen = $derived(!isOverlay && page.url.pathname !== '/')
+	let loaded = $state(false)
+
+	onMount(() => { resetTypewriter(); loaded = true })
+</script>
+
+<aside id="info" aria-hidden={isFullscreen}>
+	<div class="content" class:bg={page.state.overlay}>
+		<div class="top">
+			{#if loaded && about?.description}
+				<div class="portableText info" in:typewriter>
+					<PortableText value={about.description} components={{ block: PortableTextStyle, marks: { link: PortableTextStyle } }} />
+				</div>
+			{/if}
+			{#if loaded && about?.mail}
+				<a use:obelo class="hover-yellow" href="mailto:{about.mail}" in:typewriter>{about.mail}</a>
+			{/if}
+			{#if loaded && about?.instagram}
+				<a use:obelo class="hover-yellow" href={about.instagram.href} target="_blank" rel="noopener noreferrer" in:typewriter>{about.instagram.handle}</a>
+			{/if}
+		</div>
+		{#if page.state.overlay}
+			<div class="bottom"></div>
+		{/if}
+	</div>
+</aside>
+
+<style lang="scss">
+	@use '$lib/scss/breakpoints.module' as *;
+
+	#info {
+		position: fixed;
+		top: 0;
+		left: 0;
+		height: 100vh;
+		width: var(--infoWidth);
+		z-index: 5;
+		pointer-events: none;
+
+		&[aria-hidden=true] {
+			pointer-events: none;
+			> :global(*) {
+				pointer-events: none;
+			}
+		}
+
+		.content {
+			display: flex;
+			flex-direction: column;
+			justify-content: space-between;
+			overflow-y: scroll;
+			height: 100%;
+			padding: var(--sp-12) var(--sp-12) 0;
+
+			&.bg {
+				background-color: var(--black);
+			}
+
+			.top {
+				.info {
+					pointer-events: all;
+				}
+				a {
+					display: block;
+					width: fit-content;
+					pointer-events: all;
+
+					&:first-of-type {
+						margin-top: var(--sp-24);
+					}
+
+					&:hover {
+						color: var(--black);
+					}
+				}
+			}
+
+			.bottom {
+				background: linear-gradient(to bottom, transparent, var(--black) var(--sp-24));
+				height: calc(var(--headerHeight) + var(--sp-24));
+				flex-shrink: 0;
+				position: sticky;
+				bottom: 0;
+			}
+		}
+	}
+</style>

@@ -1,0 +1,56 @@
+*, *::before, *::after {
+	box-sizing: border-box;
+	-webkit-tap-highlight-color: transparent;
+}
+* {
+	margin: 0;
+}
+body {
+	overflow-x: hidden;
+	overscroll-behavior-x: none;
+}
+body.scroll-locked {
+	overflow: hidden !important;
+	touch-action: none;
+}
+p, h1, h2, h3, h4, h5, h6 {
+	overflow-wrap: break-word;
+	font-size: inherit;
+	font-weight: inherit;
+	line-height: inherit;
+	letter-spacing: inherit;
+}
+img, picture, video, canvas, svg {
+	display: block;
+	max-width: 100%;
+}
+input, button, textarea, select {
+	font: inherit;
+	appearance: none;
+}
+input:focus {
+	outline: none;
+}
+button {
+	appearance: none;
+	border-radius: 0;
+	text-align: inherit;
+	background: none;
+	box-shadow: none;
+	padding: 0;
+	cursor: pointer;
+	border: none;
+	color: inherit;
+	font: inherit;
+}
+a, a:any-link {
+	text-decoration: none;
+	cursor: pointer;
+	color: inherit;
+	display: inline-block;
+}
+ul, ol {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}

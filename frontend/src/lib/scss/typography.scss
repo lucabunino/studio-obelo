@@ -1,0 +1,41 @@
+@use 'breakpoints.module' as bp;
+
+@font-face {
+  font-family: "Nord";
+  src: url("/fonts/NordTrialSN-Book.otf") format("opentype");
+  font-weight: 350;
+  font-style: normal;
+  font-display: block;
+}
+@font-face {
+  font-family: "Pelikan";
+  src: url("/fonts/ABCPelikan-Bold-Trial.woff2") format("woff2"),
+       url("/fonts/ABCPelikan-Bold-Trial.woff") format("woff");
+  font-weight: 700;
+  font-style: normal;
+  font-display: block;
+}
+
+/* Typography */
+.no {
+	&,
+	&-s {
+		font-family: "Nord", Helvetica, Arial, sans-serif;
+		font-optical-sizing: auto;
+		font-style: normal;
+	}
+	&-s		{ font-size: 1rem; letter-spacing: -0.01em; line-height: 1.2; font-weight: 350; }
+
+	@media (width <= bp.$md) {
+		&-s			{ font-size: .5rem; letter-spacing: -0.01em; line-height: 1.2; font-weight: 350; }
+	}
+}
+.bold			{ font-weight: 700; }
+.uppercase		{
+	text-transform: uppercase;
+	font-size: .95em;
+	-moz-font-feature-settings: "lnum";
+	-webkit-font-feature-settings: "lnum";
+	font-feature-settings: "lnum";
+}
+.titlecase		{ text-transform: capitalize; }
