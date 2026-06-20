@@ -11,40 +11,10 @@
 	let { educations, slug } = $props()
 
 	let swiperEl = $state()
-	let keyHoldTimer = null
-	let keyHoldCount = 0
 	let hoverSide = $state(null)
 	const tilt = $derived(hoverSide === 'left' ? '-2deg' : hoverSide === 'right' ? '2deg' : '0deg')
 	const peekPrev = $derived(hoverSide === 'left' ? '48px' : '0px')
 	const peekNext = $derived(hoverSide === 'right' ? '-48px' : '0px')
-
-	function startKeyHold(direction) {
-		if (keyHoldTimer) return
-		const swiper = swiperEl?.swiper
-		if (!swiper) return
-
-		direction === 'left' ? swiper.slidePrev() : swiper.slideNext()
-		keyHoldCount = 0
-
-		function repeat() {
-			const s = swiperEl?.swiper
-			if (!s) return
-			direction === 'left' ? s.slidePrev() : s.slideNext()
-			keyHoldCount++
-			const delay = Math.max(60, 200 - keyHoldCount * 14)
-			s.params.speed = Math.max(80, delay)
-			keyHoldTimer = setTimeout(repeat, delay)
-		}
-
-		keyHoldTimer = setTimeout(repeat, 350)
-	}
-
-	function stopKeyHold() {
-		clearTimeout(keyHoldTimer)
-		keyHoldTimer = null
-		keyHoldCount = 0
-		if (swiperEl?.swiper) swiperEl.swiper.params.speed = 250
-	}
 
 	const slides = $derived(
 		educations.items
@@ -80,7 +50,7 @@
 		Object.assign(swiperEl, {
 			loop: true,
 			effect: 'creative',
-			speed: 250,
+			speed: 300,
 			grabCursor: true,
 			preventInteractionOnTransition: false,
 			loopAdditionalSlides: 4,
@@ -106,14 +76,13 @@
 			},
 		})
 		swiperEl.initialize()
-
-		swiperEl.swiper.on('slideChange', () => {
-			activeRealIndex = swiperEl.swiper.realIndex
-		})
+		
 		swiperEl.swiper.on('slideNextTransitionStart', () => {
+			activeRealIndex = swiperEl.swiper.realIndex
 			window.dispatchEvent(new CustomEvent('obelo-swiper-step', { detail: { direction: 'next' } }))
 		})
 		swiperEl.swiper.on('slidePrevTransitionStart', () => {
+			activeRealIndex = swiperEl.swiper.realIndex
 			window.dispatchEvent(new CustomEvent('obelo-swiper-step', { detail: { direction: 'prev' } }))
 		})
 		swiperEl.swiper.on('slideChangeTransitionEnd', () => {
@@ -121,23 +90,12 @@
 		})
 
 		function onKeyDown(e) {
-			if (e.repeat) return
-			if (e.key === 'ArrowLeft') startKeyHold('left')
-			else if (e.key === 'ArrowRight') startKeyHold('right')
-			else if (e.key === 'Escape') closeSwiper()
+			if (e.key === 'ArrowLeft') swiperEl.swiper.slidePrev()
+			else if (e.key === 'ArrowRight') swiperEl.swiper.slideNext()
+			else if (e.key === 'Escape' && !page.state.overlay) closeSwiper()
 		}
-		function onKeyUp(e) {
-			if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') stopKeyHold()
-		}
-
 		window.addEventListener('keydown', onKeyDown)
-		window.addEventListener('keyup', onKeyUp)
-
-		return () => {
-			stopKeyHold()
-			window.removeEventListener('keydown', onKeyDown)
-			window.removeEventListener('keyup', onKeyUp)
-		}
+		return () => window.removeEventListener('keydown', onKeyDown)
 	})
 </script>
 
@@ -149,18 +107,16 @@
 	class="nav nav-prev"
 	aria-label="Previous"
 	onmouseenter={() => hoverSide = 'left'}
-	onmouseleave={() => { hoverSide = null; stopKeyHold() }}
-	onmousedown={() => startKeyHold('left')}
-	onmouseup={stopKeyHold}
+	onmouseleave={() => hoverSide = null}
+	onclick={() => swiperEl.swiper.slidePrev()}
 ></button>
 
 <button
 	class="nav nav-next"
 	aria-label="Next"
 	onmouseenter={() => hoverSide = 'right'}
-	onmouseleave={() => { hoverSide = null; stopKeyHold() }}
-	onmousedown={() => startKeyHold('right')}
-	onmouseup={stopKeyHold}
+	onmouseleave={() => hoverSide = null}
+	onclick={() => swiperEl.swiper.slideNext()}
 ></button>
 
 <swiper-container bind:this={swiperEl} init="false" style:--slide-tilt={tilt} style:--peek-prev={peekPrev} style:--peek-next={peekNext}>
@@ -170,7 +126,7 @@
 				<span class="index">{activeSlide?.imageIndex}</span>
 				<Media media={slide.media} class="single-education" />
 				{#if slide.media?.image?.asset?.description}
-					<caption class="caption">{slide.media.image.asset.description}</caption>
+					<span class="caption">{slide.media.image.asset.description}</span>
 				{/if}
 			</div>
 		</swiper-slide>

@@ -19,7 +19,7 @@
 </script>
 
 {#if visible}
-	<div id="cookie-banner" class="glass-1" role="dialog" aria-label="Cookie consent" aria-modal="false" in:typewriter>
+	<div id="cookie-banner" class="glass-1" role="dialog" aria-label="Cookie consent" aria-modal="false" in:typewriter={{ duration: 400 }}>
 		<p>This website uses only technical cookies, which are necessary for its proper functioning. No profiling or third-party cookies are used. For more details, please consult our cookies and privacy policies.</p>
 		<button use:obelo class="hover-yellow" onclick={accept}>Ok, I understand</button>
 	</div>

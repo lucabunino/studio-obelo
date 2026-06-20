@@ -15,26 +15,28 @@
 	onMount(() => { resetTypewriter(); loaded = true })
 </script>
 
-<aside id="info" aria-hidden={isFullscreen}>
-	<div class="content" class:bg={page.state.overlay}>
-		<div class="top">
-			{#if loaded && about?.description}
-				<div class="portableText info" in:typewriter>
-					<PortableText value={about.description} components={{ block: PortableTextStyle, marks: { link: PortableTextStyle } }} />
-				</div>
-			{/if}
-			{#if loaded && about?.mail}
-				<a use:obelo class="hover-yellow" href="mailto:{about.mail}" in:typewriter>{about.mail}</a>
-			{/if}
-			{#if loaded && about?.instagram}
-				<a use:obelo class="hover-yellow" href={about.instagram.href} target="_blank" rel="noopener noreferrer" in:typewriter>{about.instagram.handle}</a>
+{#if loaded}
+	<aside id="info" aria-hidden={isFullscreen}>
+		<div class="content" class:bg={page.state.overlay} in:typewriter|global={{ duration: 800 }}>
+			<div class="top">
+				{#if about?.description}
+					<div class="portableText info">
+						<PortableText value={about.description} components={{ block: PortableTextStyle, marks: { link: PortableTextStyle } }} />
+					</div>
+				{/if}
+				{#if about?.mail}
+					<a use:obelo class="hover-yellow" href="mailto:{about.mail}">{about.mail}</a>
+				{/if}
+				{#if about?.instagram}
+					<a use:obelo class="hover-yellow" href={about.instagram.href} target="_blank" rel="noopener noreferrer">{about.instagram.handle}</a>
+				{/if}
+			</div>
+			{#if page.state.overlay}
+				<div class="bottom"></div>
 			{/if}
 		</div>
-		{#if page.state.overlay}
-			<div class="bottom"></div>
-		{/if}
-	</div>
-</aside>
+	</aside>
+{/if}
 
 <style lang="scss">
 	@use '$lib/scss/breakpoints.module' as *;

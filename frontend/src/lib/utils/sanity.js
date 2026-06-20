@@ -83,7 +83,23 @@ export async function getWork(slug) {
 		team[]->{ name, surname },
 		link,
 		description,
-		blocks,
+		blocks[] {
+			_type,
+			_key,
+			_type == "mediaBlock" => {
+				items[] { ${media} },
+				width,
+				alignment,
+				caption,
+			},
+			_type == "textBlock" => {
+				text,
+			},
+			_type == "workReference" => {
+				"work": work->{ title, "slug": slug.current, ongoing, startDate, endDate, services[]->{ title } },
+				marginBottom,
+			}
+		},
 		seoDescription,
 		seoImage,
 	}`, { slug })

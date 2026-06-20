@@ -69,6 +69,20 @@
 			}
 		}
 
+		&.work {
+			width: 100%;
+			height: auto;
+
+			img, video {
+				width: 100%;
+				height: auto;
+				max-height: 90vh;
+				object-fit: contain;
+				object-position: left;
+				display: block;
+			}
+		}
+
 		&.single-education {
 			display: flex;
 			align-items: center;

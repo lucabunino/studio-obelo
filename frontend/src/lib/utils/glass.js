@@ -24,15 +24,18 @@ class FxFilter {
                 CSS.registerProperty({ name: '--fx-filter', syntax: '*', inherits: false, initialValue: '' });
             } catch (e) {}
         }
-        if (!this.running) {
-            this.running = true;
-            this.tick();
-        }
-    }
+        if (this.running) return;
+        this.running = true;
 
-    static tick() {
-        this.scanElements();
-        requestAnimationFrame(() => this.tick());
+        requestAnimationFrame(() => {
+            this.scanElements();
+
+            this.ro = new ResizeObserver(() => this.scanElements());
+            this.ro.observe(document.documentElement);
+
+            this.mo = new MutationObserver(() => this.scanElements());
+            this.mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
+        });
     }
 
     static scanElements() {
@@ -311,4 +314,4 @@ FxFilter.add({
     updatesOn: []
 });
 
-if (typeof window !== 'undefined') FxFilter.init();
+export function initGlass() { FxFilter.init() }

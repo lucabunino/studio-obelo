@@ -56,8 +56,7 @@ main {
 .glass-1 {
 	-webkit-backdrop-filter: blur(10px) saturate(1.2);
     transform: translateZ(0);
-	// --fx-filter: blur(10px) liquid-glass(2, 10, 1) saturate(1.25) color-overlay(white,.2) noise(.5, .4, .1);
-	--fx-filter: blur(10px) liquid-glass(2, 10, 1) saturate(1.25) color-overlay(white,.2);
+	--fx-filter: blur(10px) liquid-glass(2, 10, 1) saturate(1.25) color-overlay(white,.2) noise(.3, 1, .03);
 	position: relative;
 	overflow: hidden;
 	background: rgba(245, 245, 245, 0.15);
@@ -78,7 +77,6 @@ main {
 	-webkit-backdrop-filter: blur(10px) saturate(1.2);
     transform: translateZ(0);
 	--fx-filter: blur(10px) liquid-glass(2, 100, 1) saturate(1.2) color-overlay(white,.05) noise(.3, 1, .03);
-	// --fx-filter: blur(10px) liquid-glass(2, 100, 1) saturate(1.25) color-overlay(white,.05);
 	position: relative;
 	overflow: hidden;
 	background: rgba(245, 245, 245, 0.15);
@@ -97,9 +95,12 @@ main {
 	color: var(--black);
 	position: relative;
 	z-index: 0;
+	width: fit-content;
 }
 .yellow,
 .hover-yellow:hover {
+	color: var(--black);
+
 	&::before {
 		content: '';
 		position: absolute;
@@ -129,6 +130,16 @@ main {
 	.marquee-copy {
 		white-space: nowrap;
 		padding-right: 2em;
+	}
+}
+
+.portableText {
+	ul, ol {
+		padding-left: 1em;
+		margin: 0;
+	}
+	li {
+		margin: 0;
 	}
 }
 

@@ -1,46 +1,30 @@
 <script>
 	import { page } from '$app/state'
-	import { goto, pushState, preloadData } from '$app/navigation'
 	import { obelo } from '$lib/utils/obelo.js'
 	import { typewriter, resetTypewriter } from '$lib/utils/typewriter.js'
+	import { handleOverlay, isOverlayActive } from '$lib/utils/overlay.js'
 	import { onMount } from 'svelte'
-
-	const OVERLAY_ROUTES = ['/works', '/about']
-
-	function isActive(href) {
-		if (page.state.overlay) return page.state.overlay === href
-		return page.url.pathname === href
-	}
 
 	let loaded = $state(false)
 	onMount(() => { resetTypewriter(); loaded = true })
 
-	async function handleOverlay(e, href) {
-		e.preventDefault()
-		if (isActive(href)) {
-			goto(page.state.lastFullscreen ?? '/')
-			return
-		}
-		const result = await preloadData(href)
-		if (result.type === 'loaded' && result.status === 200) {
-			const lastFullscreen = page.state.lastFullscreen ?? (!OVERLAY_ROUTES.includes(page.url.pathname) ? page.url.pathname : '/')
-			pushState(href, { overlay: href, overlayData: result.data, from: page.url.pathname, lastFullscreen })
-		}
+	function isActive(href) {
+		return isOverlayActive(href)
 	}
 </script>
 
-<header>
-	{#if loaded}
-		<a use:obelo class="logo" href="/" in:typewriter>studio òbelo</a>
-	{/if}
-	<nav class="menu" class:bg={isActive('/works') || isActive('/about')}>
-		{#if loaded}
-			<a use:obelo class="menu-item uppercase" href="/works" aria-current={isActive('/works') ? 'page' : undefined} onclick={(e) => handleOverlay(e, '/works')} in:typewriter>Works</a>
-			<a use:obelo class="menu-item uppercase" href="/about" aria-current={isActive('/about') ? 'page' : undefined} onclick={(e) => handleOverlay(e, '/about')} in:typewriter>About</a>
-			<a use:obelo class="menu-item uppercase" href="/education" aria-current={isActive('/education') ? 'page' : undefined} in:typewriter>Education</a>
-		{/if}
-	</nav>
-</header>
+{#if loaded}
+	<header in:typewriter|global={{ duration: 400 }}>
+		<a use:obelo class="logo" href="/">studio òbelo</a>
+		<nav class="menu" class:bg={isActive('/works') || isActive('/about')}>
+			{#if loaded}
+				<a use:obelo class="menu-item uppercase" href="/works" aria-current={isActive('/works') ? 'page' : undefined} onclick={(e) => handleOverlay(e, '/works')}>Works</a>
+				<a use:obelo class="menu-item uppercase" href="/about" aria-current={isActive('/about') ? 'page' : undefined} onclick={(e) => handleOverlay(e, '/about')}>About</a>
+				<a use:obelo class="menu-item uppercase" href="/education" aria-current={isActive('/education') ? 'page' : undefined}>Education</a>
+			{/if}
+		</nav>
+	</header>
+{/if}
 
 <style lang="scss">
 	@use '$lib/scss/breakpoints.module' as *;

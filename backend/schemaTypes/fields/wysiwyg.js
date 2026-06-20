@@ -7,6 +7,7 @@ export default function wysiwyg(fieldName, groupName) {
 				type: 'block',
 				styles: [
 					{value: 'normal', title: 'Normal'},
+					{value: 'h2', title: 'H2'},
 				],
 				marks: {
 					decorators: [

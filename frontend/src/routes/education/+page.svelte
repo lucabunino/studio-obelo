@@ -56,12 +56,12 @@
 	<h1 class="sr-only">Education</h1>
 	<aside class="intro" aria-label="Introduction">
 		{#if loaded && educations?.description}
-			<div class="description portableText" in:typewriter>
+			<div class="description portableText" in:typewriter={{ duration: 800 }}>
 				<PortableText value={educations.description} components={{ block: PortableTextStyle, marks: { link: PortableTextStyle } }} />
 			</div>
 		{/if}
 		{#if loaded && educations?.teachingsOngoing?.length}
-			<ul class="teachings" aria-label="Ongoing teaching" in:typewriter>
+			<ul class="teachings" aria-label="Ongoing teaching" in:typewriter={{ duration: 800 }}>
 				{#each educations.teachingsOngoing as t}
 					<li class="teaching">{t.title}</li>
 				{/each}
@@ -136,7 +136,7 @@
 		gap: var(--sp-12);
 		pointer-events: none;
 		width: var(--infoWidth);
-		z-index: 6;
+		z-index: 2;
 
 		* {
 			pointer-events: auto;

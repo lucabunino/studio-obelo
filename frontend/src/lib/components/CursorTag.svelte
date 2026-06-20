@@ -3,12 +3,14 @@
     import { onMount } from 'svelte';
 	import { innerWidth } from 'svelte/reactivity/window'
 
-	let { title, subtitle, year } = $props()
+	let { title, subtitle, year, arrow } = $props()
 
-	let mouseX = $state(0)
-	let mouseY = $state(0)
+	let mouseX = $state(null)
+	let mouseY = $state(null)
 	let els = $state([])
 	let mirrorEls = $state([])
+	let arrowEl = $state()
+	let arrowMirrorEl = $state()
 	let loaded = $state(false)
 
 	$effect(() => {
@@ -19,7 +21,7 @@
 	onMount(() => { resetTypewriter(); loaded = true })
 
 	const lines = $derived([title, subtitle, year].filter(Boolean))
-	const below = $derived(mouseY < window.innerHeight - 80)
+	const below = $derived(mouseY === null || mouseY < window.innerHeight - 80)
 
 	function clampCenter(mirrorEl, mx) {
 		const w = mirrorEl?.offsetWidth ?? 0
@@ -27,10 +29,24 @@
 		return Math.max(w / 2, Math.min(mx, vw - w / 2))
 	}
 
-	function getTop(i) {
+	function getArrowTop() {
 		const offset = below ? 22 : -16
 		if (below) {
+			return mouseY + offset
+		} else {
 			let y = mouseY + offset
+			const arrowH = arrowEl?.getBoundingClientRect().height ?? 20
+			for (let j = 0; j < lines.length; j++) y -= els[j]?.getBoundingClientRect().height ?? 20
+			y -= arrowH
+			return y
+		}
+	}
+
+	function getTop(i) {
+		const offset = below ? 22 : -16
+		const arrowH = arrow ? (arrowEl?.getBoundingClientRect().height ?? 20) : 0
+		if (below) {
+			let y = mouseY + offset + arrowH
 			for (let j = 0; j < i; j++) y += els[j]?.getBoundingClientRect().height ?? 20
 			return y
 		} else {
@@ -41,15 +57,25 @@
 	}
 </script>
 
+{#if arrow}
+	<span bind:this={arrowMirrorEl} class="cursor-line yellow mirror" aria-hidden="true">{arrow}</span>
+{/if}
 {#each lines as line, i}
 	<span bind:this={mirrorEls[i]} class="cursor-line yellow mirror" aria-hidden="true">{line}</span>
 {/each}
 
+{#if arrow && loaded && mouseX !== null}
+	<span
+		bind:this={arrowEl}
+		class="cursor-line yellow"
+		style="left: {clampCenter(arrowMirrorEl, mouseX)}px; top: {getArrowTop()}px; transform: translateX(-50%)"
+	>{arrow}</span>
+{/if}
 {#each lines as line, i}
-	{#if loaded}
+	{#if loaded && mouseX !== null}
 		<span
 			bind:this={els[i]}
-			in:typewriter
+			in:typewriter={{ duration: 800 }}
 			class="cursor-line yellow"
 			style="left: {clampCenter(mirrorEls[i], mouseX)}px; top: {getTop(i)}px; transform: translateX(-50%)"
 		>{line}</span>

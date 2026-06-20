@@ -3,7 +3,7 @@
 	import { page } from '$app/state'
 	import { fade } from 'svelte/transition'
 	import { typewriter, resetTypewriter } from '$lib/utils/typewriter.js'
-	import { onMount } from 'svelte'
+	import { onMount, onDestroy } from 'svelte'
 	import Media from '$lib/components/Media.svelte'
 	import { marquee } from '$lib/utils/marquee.js'
     import { obelo } from '$lib/utils/obelo.js';
@@ -17,9 +17,12 @@
 			return { ...w, inactive: !activeFilters.some(f => slugs.includes(f)) }
 		})
 	)
-	let DURATION = $derived(10*filteredWorks.length)
-	let step = $derived(DURATION / (data.works?.length || 1))
+	const STEP = 10
+	const OUT_DURATION = 200
+	const RIPPLE = 3
 	let loaded = $state(false)
+	let filtersReady = $state(false)
+	let isSorting = $state(false)
 	let activeWork = $state(null)
 
 	function buildSearch(sortVal, filters) {
@@ -42,15 +45,19 @@
 		syncFiltersToUrl(next)
 	}
 
-	onMount(() => { resetTypewriter(); loaded = true })
+	let alive = true
+	onMount(() => { resetTypewriter(); loaded = true; filtersReady = true })
+	onDestroy(() => { alive = false })
 
 	async function setSort(key) {
 		let next
 		if (sort === `${key}-desc`) next = `${key}-asc`
 		else if (sort === `${key}-asc`) next = `${key}-desc`
 		else next = key === 'year' ? 'year-desc' : 'title-asc'
+		const outDuration = (filteredWorks.length - 1) * RIPPLE + OUT_DURATION
+		isSorting = true
 		loaded = false
-		await new Promise(r => setTimeout(r, DURATION + step))
+		await new Promise(r => setTimeout(r, outDuration))
 		const url = `/works${buildSearch(next, activeFilters)}`
 		if (page.state.overlay) {
 			const result = await preloadData(url)
@@ -60,83 +67,85 @@
 		} else {
 			await goto(url, { replaceState: true, noScroll: true })
 		}
+		if (!alive) return
+		resetTypewriter()
 		loaded = true
+		isSorting = false
 	}
 </script>
 
 <main>
 	<h1 class="sr-only">Works</h1>
-	<div class="content">
-		<div class="top">
-			<nav id="sorters" role="group" aria-label="Sorters">
-				<button class="sorter title"
-					aria-pressed={sort?.startsWith('title')}
-					aria-label="Sort by title{sort === 'title-asc' ? ', ascending' : sort === 'title-desc' ? ', descending' : ''}"
-					onclick={() => setSort('title')}
-				>Title<span class="arrow">{sort === 'title-asc' ? ' ▲' : sort === 'title-desc' ? ' ▼' : ''}</span></button>
-				<button class="sorter year"
-					aria-pressed={sort?.startsWith('year')}
-					aria-label="Sort by year{sort === 'year-desc' ? ', descending' : sort === 'year-asc' ? ', ascending' : ''}"
-					onclick={() => setSort('year')}
-				><span class="arrow">{sort === 'year-desc' ? '▼ ' : sort === 'year-asc' ? '▲ ' : ''}</span>Year</button>
-			</nav>
-			<div id="works" aria-label="Works">
-				<ul class="works" onmouseleave={() => activeWork = null}>
-					{#each filteredWorks as work, i (work._id)}
-						{#if loaded}
-							<li class="work hover-yellow"
+		<div class="content">
+			<div class="top">
+				<nav id="sorters" role="group" aria-label="Sorters">
+					<button class="sorter title"
+						aria-pressed={sort?.startsWith('title')}
+						aria-label="Sort by title{sort === 'title-asc' ? ', ascending' : sort === 'title-desc' ? ', descending' : ''}"
+						onclick={() => setSort('title')}
+					>Title<span class="arrow">{sort === 'title-asc' ? ' ▲' : sort === 'title-desc' ? ' ▼' : ''}</span></button>
+					<button class="sorter year"
+						aria-pressed={sort?.startsWith('year')}
+						aria-label="Sort by year{sort === 'year-desc' ? ', descending' : sort === 'year-asc' ? ', ascending' : ''}"
+						onclick={() => setSort('year')}
+					><span class="arrow">{sort === 'year-desc' ? '▼ ' : sort === 'year-asc' ? '▲ ' : ''}</span>Year</button>
+				</nav>
+				<div id="works" aria-label="Works">
+					<ul class="works" onmouseleave={() => activeWork = null}>
+						{#each filteredWorks as work, i (work._id)}
+							{#if loaded}
+								<li class="work hover-yellow"
 								class:inactive={work.inactive}
 								onmouseenter={() => { activeWork = work}}
-								out:fade={{ duration: step, delay: (data.works.length - 1 - work.index) * step }}
-								in:typewriter
-							>
-								<a href="/works/{work.slug.current}">
-									<h2 class="title ellipsis" use:marquee use:obelo>{work.title}</h2>
-									{#if work.services?.length}
-										<ul class="services ellipsis" use:marquee aria-label="Services">
-											{#each work.services as service, i (service.title)}
-												<li class="service" use:obelo>{service.title}</li>{#if i+1 < work.services.length}{@html ',&nbsp;'}{/if}
-											{/each}
-										</ul>
-									{/if}
-									<p class="year ellipsis">
-										{#if work.ongoing}
-											<span use:obelo>Ongoing</span>
-										{:else}
-											<time use:obelo datetime={work.startDate}>{work.startDate?.slice(0, 4)}</time>{#if work.endDate}–<time datetime={work.endDate}>{work.endDate?.slice(0, 4)}</time>{/if}
+								in:typewriter|global={{ duration: 30, delay: isSorting ? i * STEP : undefined }}
+								out:typewriter|global={{ duration: OUT_DURATION, clean: true, delay: (filteredWorks.length - 1 - i) * RIPPLE }}
+								>
+									<a href="/works/{work.slug.current}">
+										<h2 class="title ellipsis" use:marquee use:obelo>{work.title}</h2>
+										{#if work.services?.length}
+											<ul class="services ellipsis" use:marquee aria-label="Services">
+												{#each work.services as service, i (service.title)}
+													<li class="service" use:obelo>{service.title}</li>{#if i+1 < work.services.length}{@html ',&nbsp;'}{/if}
+												{/each}
+											</ul>
 										{/if}
-									</p>
-								</a>
-							</li>
-						{/if}
-					{/each}
-				</ul>
+										<p class="year ellipsis">
+											{#if work.ongoing}
+												<span use:obelo>Ongoing</span>
+											{:else}
+												<time use:obelo datetime={work.startDate}>{work.startDate?.slice(0, 4)}</time>{#if work.endDate}–<time datetime={work.endDate}>{work.endDate?.slice(0, 4)}</time>{/if}
+											{/if}
+										</p>
+									</a>
+								</li>
+							{/if}
+						{/each}
+					</ul>
+				</div>
 			</div>
-		</div>
-		<div class="bottom">
-			<nav id="filters" aria-labelledby="filters-label">
-				<div class="titles">
-					<h2 id="filters-label">Filters</h2>
-					{#if activeFilters.length > 0}
-						<button use:obelo class="clear" onclick={() => syncFiltersToUrl([])}>× Clear all filters</button>
-					{/if}
+			{#if filtersReady}
+				<div class="bottom" in:typewriter|global={{ duration: 800 }}>
+					<nav id="filters" aria-labelledby="filters-label">
+						<div class="titles">
+							<h2 id="filters-label">Filters</h2>
+							{#if activeFilters.length > 0}
+								<button use:obelo class="clear" onclick={() => syncFiltersToUrl([])}>× Clear all filters</button>
+							{/if}
+						</div>
+						<div class="filters">
+							{#each data.filters as filter, i (filter.title)}
+									<button
+										class="filter"
+										data-type={filter.type}
+										aria-pressed={activeFilters.includes(filter.slug)}
+										onclick={() => toggleFilter(filter.slug)}
+									><span use:obelo>{filter.title}</span></button>
+							{/each}
+						</div>
+					</nav>
 				</div>
-				<div class="filters">
-					{#each data.filters as filter, i (filter.title)}
-						{#if loaded}
-							<button
-								class="filter"
-								data-type={filter.type}
-								aria-pressed={activeFilters.includes(filter.slug)}
-								onclick={() => toggleFilter(filter.slug)}
-								in:typewriter
-							><span use:obelo>{filter.title}</span></button>
-						{/if}
-					{/each}
-				</div>
-			</nav>
+			{/if}
 		</div>
-	</div>
 	<aside id="preview" aria-label="Work preview">
 		{#if activeWork}
 			<div class="media-wrapper">
@@ -213,6 +222,8 @@
 						flex-direction: column;
 
 						.work {
+							width: 100%;
+
 							&.inactive {
 								color: var(--black-50);
 							}

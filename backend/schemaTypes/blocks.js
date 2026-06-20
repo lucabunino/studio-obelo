@@ -48,7 +48,7 @@ export const mediaBlock = {
 		},
 		{
 			name: 'caption',
-			type: 'string',
+			type: 'text',
 			hidden: ({parent}) => parent?.width === 'full',
 		},
 	],
@@ -90,6 +90,12 @@ export const workReferenceBlock = {
 			type: 'reference',
 			to: [{type: 'work'}],
 			validation: Rule => Rule.required(),
+		},
+		{
+			name: 'marginBottom',
+			title: 'Margin bottom',
+			type: 'boolean',
+			initialValue: false,
 		},
 	],
 	preview: {

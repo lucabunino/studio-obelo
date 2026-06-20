@@ -8,36 +8,39 @@
 	import Info from '$lib/components/Info.svelte'
 	import WorksPage from './works/+page.svelte'
 	import AboutPage from './about/+page.svelte'
+	import PolicyPage from './policy/[slug]/+page.svelte'
 	import { page } from '$app/state'
 	import { afterNavigate, goto, pushState } from '$app/navigation'
-	import '$lib/utils/glass.js'
+	import { onMount } from 'svelte'
+	import { initGlass } from '$lib/utils/glass.js'
 	import { obeloGrid } from '$lib/utils/obeloGrid.js'
 
 	const SLIDE_DURATION = 400
 
 	const isEducationRoute = $derived(page.route.id?.startsWith('/education') ?? false)
 	const showObeloGrid = $derived(isEducationRoute || isOverlay)
-	const obeloGridParams = $derived({
-		cols: 6,
-		rows: 8,
-		loop: true,
-	})
 
 	let { data, children } = $props()
 
 	const OVERLAY_ROUTES = ['/works', '/about']
+	function isOverlayRoute(pathname) {
+		return OVERLAY_ROUTES.includes(pathname) || pathname.startsWith('/policy/')
+	}
 	const isOverlay = $derived(!!page.state.overlay)
 	const isFullscreen = $derived(!isOverlay && page.url.pathname !== '/')
 	let redirecting = $state(false)
 
+	onMount(() => initGlass())
+
 	afterNavigate(async ({ type, to }) => {
-		if (type === 'enter' && to && OVERLAY_ROUTES.includes(to.url.pathname) && !page.state.overlay) {
+		if (type === 'enter' && to && isOverlayRoute(to.url.pathname) && !page.state.overlay) {
 			redirecting = true
+			const from = window.location.href
 			const overlayPathname = to.url.pathname
 			const overlayFullPath = to.url.pathname + to.url.search
 			const overlayData = { ...page.data }
 			await goto('/', { replaceState: true, noScroll: true })
-			pushState(overlayFullPath, { overlay: overlayPathname, overlayData, from: '/' })
+			pushState(overlayFullPath, { overlay: overlayPathname, overlayData, from })
 			redirecting = false
 		}
 	})
@@ -46,7 +49,7 @@
 <Head />
 
 {#if showObeloGrid}
-	<div class="obelo-grid" class:glass-2={isOverlay} class:is-overlay={isOverlay} use:obeloGrid={obeloGridParams}></div>
+	<div class="obelo-grid" class:glass-2={isOverlay} class:is-overlay={isOverlay} use:obeloGrid={{cols: 6, rows: 8, loop: true}}></div>
 {/if}
 
 <div aria-hidden={redirecting || data.needsOverlayRedirect} class:redirecting={redirecting || data.needsOverlayRedirect}>
@@ -67,6 +70,8 @@
 				<WorksPage data={page.state.overlayData} />
 			{:else if page.state.overlay === '/about'}
 				<AboutPage data={page.state.overlayData} />
+			{:else if page.state.overlay?.startsWith('/policy/')}
+				<PolicyPage data={page.state.overlayData} />
 			{/if}
 		</div>
 	{/if}
