@@ -3,23 +3,30 @@
 	import PortableTextStyle from '$lib/components/PortableTextStyle.svelte'
 	import { typewriter, resetTypewriter } from '$lib/utils/typewriter.js'
 	import { handleOverlay } from '$lib/utils/overlay.js'
-	import { onMount } from 'svelte'
-    import { obelo } from '$lib/utils/obelo.js';
+	import { onDestroy, onMount } from 'svelte'
+	import { obelo } from '$lib/utils/obelo.js'
+	import timing from '$lib/scss/timing.module.scss'
+    import { beforeNavigate } from '$app/navigation';
 
 	let { data } = $props()
 	const about = $derived(data.about)
 	let loaded = $state(false)
+	const DURATION = parseInt(timing.overlayDuration)
 
-	onMount(() => { resetTypewriter(); loaded = true })
+	$effect(() => {
+		resetTypewriter();
+		const t = setTimeout(() => loaded = true, DURATION)
+		return () => clearTimeout(t)
+	})
 </script>
 
 {#if loaded}
 	<main>
 		<h1 class="sr-only">About</h1>
-		<div class="content" in:typewriter|global={{ duration: 800 }}>
-			<div class="top">
+		<div class="content">
+			<div class="top" in:typewriter out:typewriter|global={{ duration: DURATION, clean: true }}>
 				{#if about?.team?.length}
-					<section id="team" aria-labelledby="team-heading" in:typewriter={{ duration: 800 }}>
+					<section id="team" aria-labelledby="team-heading">
 						<h2 id="team-heading" class="uppercase">Team:</h2>
 						<ul class="team">
 							{#each about.team as person, i}
@@ -30,7 +37,7 @@
 				{/if}
 
 				{#if about?.clients?.length}
-					<section id="clients" aria-labelledby="clients-heading" in:typewriter={{ duration: 800 }}>
+					<section id="clients" aria-labelledby="clients-heading">
 						<h2 id="clients-heading" class="uppercase">Selected clients:</h2>
 						<ul class="clients">
 							{#each about.clients as client, i}
@@ -41,11 +48,11 @@
 				{/if}
 
 				{#if about?.team?.length || about?.clients?.length}
-					<div class="separator" in:typewriter={{ duration: 800 }}>÷</div>
+					<div class="separator">÷</div>
 				{/if}
 
 				{#if about?.recognitions?.length}
-					<section id="recognitions" aria-labelledby="recognitions-heading" in:typewriter={{ duration: 800 }}>
+					<section id="recognitions" aria-labelledby="recognitions-heading">
 						<h2 id="recognitions-heading" class="uppercase">Recognitions:</h2>
 						<ul class="recognitions">
 							{#each about.recognitions as r}
@@ -56,11 +63,11 @@
 							{/each}
 						</ul>
 					</section>
-					<div class="separator" in:typewriter={{ duration: 800 }}>÷</div>
+					<div class="separator">÷</div>
 				{/if}
 
 				{#if about?.teachingsOngoing?.length || about?.teachingsOther?.length}
-					<section id="teaching" aria-labelledby="teaching-heading" in:typewriter={{ duration: 800 }}>
+					<section id="teaching" aria-labelledby="teaching-heading">
 						<h2 id="teaching-heading" class="uppercase">Teaching:</h2>
 						{#if about.teachingsOngoing?.length}
 							<ul class="teachings ongoing" aria-label="Ongoing">
@@ -83,20 +90,20 @@
 							</ul>
 						{/if}
 					</section>
-					<div class="separator" in:typewriter={{ duration: 800 }}>÷</div>
+					<div class="separator">÷</div>
 				{/if}
 
 				{#if about?.applications}
-					<section id="applications" aria-label="Applications:" in:typewriter={{ duration: 800 }}>
+					<section id="applications" aria-label="Applications:">
 						<div class="applications portableText">
 							<PortableText value={about.applications} components={{ block: PortableTextStyle, marks: { link: PortableTextStyle } }} />
 						</div>
 					</section>
-					<div class="separator" in:typewriter={{ duration: 800 }}>÷</div>
+					<div class="separator">÷</div>
 				{/if}
 
 				{#if (about?.legalName || about?.vat || about?.addressLabel)}
-					<section id="legal" aria-label="Legal" in:typewriter={{ duration: 800 }}>
+					<section id="legal" aria-label="Legal">
 						<ul class="legal">
 							{#if about.legalName}<li class="legal-item">{about.legalName}</li>{/if}
 							{#if about.vat}<li class="legal-item">VAT {about.vat}</li>{/if}
@@ -111,11 +118,11 @@
 							{/if}
 						</ul>
 					</section>
-					<div class="separator" in:typewriter={{ duration: 800 }}>÷</div>
+					<div class="separator">÷</div>
 				{/if}
 
 				{#if about?.policies?.length}
-					<nav id="policies" aria-label="Legal documents" in:typewriter={{ duration: 800 }}>
+					<nav id="policies" aria-label="Legal documents">
 						<ul class="policies">
 							{#each about.policies as policy}
 								<li class="policy"><a use:obelo class="hover-yellow" href="/policy/{policy.slug}" onclick={(e) => handleOverlay(e, `/policy/${policy.slug}`)}>{policy.title}</a></li>
@@ -130,26 +137,19 @@
 {/if}
 
 <style lang="scss">
-	@use '$lib/scss/breakpoints.module' as *;
+	@use '$lib/scss/breakpoints.module' as bp;
 
 	main {
 		height: 100%;
 		width: 100%;
-		display: grid;
-		grid-template-columns: repeat(6, minmax(var(--menuColWidth), 1fr)) repeat(9, 1fr);
-		grid-template-rows: 1fr;
 
 		.content {
 			display: flex;
 			flex-direction: column;
 			justify-content: space-between;
 			overflow-y: scroll;
-			grid-column: 1 / span 6;
-			background-color: var(--white);
-			color: var(--black);
 			padding: var(--sp-12) var(--sp-12) 0;
 			height: 100%;
-			pointer-events: all;
 
 			.top {
 				.separator {
@@ -213,7 +213,7 @@
 			}
 
 			.bottom {
-				background: linear-gradient(to bottom, transparent, var(--white) var(--sp-24));
+				background: linear-gradient(to bottom, transparent, var(--bgColor) var(--sp-24));
 				height: calc(var(--headerHeight) + var(--sp-24));
 				flex-shrink: 0;
 				position: sticky;

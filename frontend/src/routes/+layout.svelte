@@ -10,68 +10,56 @@
 	import AboutPage from './about/+page.svelte'
 	import PolicyPage from './policy/[slug]/+page.svelte'
 	import { page } from '$app/state'
-	import { afterNavigate, goto, pushState } from '$app/navigation'
 	import { onMount } from 'svelte'
 	import { initGlass } from '$lib/utils/glass.js'
-	import { obeloGrid } from '$lib/utils/obeloGrid.js'
+	import { obeloGrid } from '$lib/utils/obeloGrid.svelte.js'
+	import timing from '$lib/scss/timing.module.scss'
+	import { getPageInfo } from '$lib/utils/pageInfo.svelte.js'
+	import { slideFromLeft } from '$lib/utils/transitions.js'
 
-	const SLIDE_DURATION = 400
-
-	const isEducationRoute = $derived(page.route.id?.startsWith('/education') ?? false)
-	const showObeloGrid = $derived(isEducationRoute || isOverlay)
+	const DURATION = parseInt(timing.overlayDuration)
 
 	let { data, children } = $props()
 
-	const OVERLAY_ROUTES = ['/works', '/about']
-	function isOverlayRoute(pathname) {
-		return OVERLAY_ROUTES.includes(pathname) || pathname.startsWith('/policy/')
-	}
-	const isOverlay = $derived(!!page.state.overlay)
-	const isFullscreen = $derived(!isOverlay && page.url.pathname !== '/')
-	let redirecting = $state(false)
+	const nav = getPageInfo()
 
 	onMount(() => initGlass())
-
-	afterNavigate(async ({ type, to }) => {
-		if (type === 'enter' && to && isOverlayRoute(to.url.pathname) && !page.state.overlay) {
-			redirecting = true
-			const from = window.location.href
-			const overlayPathname = to.url.pathname
-			const overlayFullPath = to.url.pathname + to.url.search
-			const overlayData = { ...page.data }
-			await goto('/', { replaceState: true, noScroll: true })
-			pushState(overlayFullPath, { overlay: overlayPathname, overlayData, from })
-			redirecting = false
-		}
-	})
 </script>
 
 <Head />
 
-{#if showObeloGrid}
-	<div class="obelo-grid" class:glass-2={isOverlay} class:is-overlay={isOverlay} use:obeloGrid={{cols: 6, rows: 8, loop: true}}></div>
+{#if page.route.id?.startsWith('/education')}
+	<div class="obelo-grid" use:obeloGrid={{cols: 6, rows: 8, loop: true}}></div>
 {/if}
 
-<div aria-hidden={redirecting || data.needsOverlayRedirect} class:redirecting={redirecting || data.needsOverlayRedirect}>
-	{#if !isFullscreen}
-		<Info about={data.about} />
+<div id="site-wrapper" data-page={nav.pageName} aria-hidden={!nav.isMobile && (nav.redirecting || data.needsOverlayRedirect)} class:redirecting={!nav.isMobile && (nav.redirecting || data.needsOverlayRedirect)}>
+	{#if nav.showInfo}
+		<div out:slideFromLeft={{ delay: DURATION }}>
+			<Info about={data.about} />
+		</div>
 	{/if}
 
-	{#if isFullscreen}
-		<div id="fullscreen">{@render children()}</div>
-	{:else}
-		<div id="background">{@render children()}</div>
-	{/if}
+	<div id="page" class:fullscreen={nav.isFullscreen}>{@render children()}</div>
 
-	{#if isOverlay}
-		<!-- <button id="back-backdrop" onclick={() => goto(page.state.lastFullscreen ?? '/')} aria-label="Go back"></button> -->
-		<div id="overlay">
-			{#if page.state.overlay === '/works'}
-				<WorksPage data={page.state.overlayData} />
-			{:else if page.state.overlay === '/about'}
-				<AboutPage data={page.state.overlayData} />
-			{:else if page.state.overlay?.startsWith('/policy/')}
-				<PolicyPage data={page.state.overlayData} />
+	{#if nav.isOverlay}
+		<div class="info-bg"
+			in:slideFromLeft
+			out:slideFromLeft={{ delay: DURATION }}>
+		</div>
+		<div class="overlay">
+			{#if page.state.overlay}
+				<div class="panel"
+					data-overlay={page.state.overlay}
+					in:slideFromLeft|global={{ offset: 'var(--infoWidth)' }}
+					out:slideFromLeft|global={{ delay: DURATION, offset: 'var(--infoWidth)' }}>
+					{#if page.state.overlay === '/works'}
+						<WorksPage data={page.state.overlayData} />
+					{:else if page.state.overlay === '/about'}
+						<AboutPage data={page.state.overlayData} />
+					{:else if page.state.overlay?.startsWith('/policy/')}
+						<PolicyPage data={page.state.overlayData} />
+					{/if}
+				</div>
 			{/if}
 		</div>
 	{/if}
@@ -91,66 +79,90 @@
 </svg>
 
 <style lang="scss">
-	@use '$lib/scss/breakpoints.module' as *;
+	@use '$lib/scss/breakpoints.module' as bp;
 
-	.obelo-grid {
-		position: fixed;
-		inset: 0;
-		width: 100vw;
-		height: 100vh;
-		z-index: 1;
-		pointer-events: none;
+	#site-wrapper {
+		transition: --bgColor var(--transition), --fgColor var(--transition);
+		transition-delay: var(--overlayDuration);
+	}
 
-		&.is-overlay {
-			z-index: 3;
-			
-			left: max(
-				calc(var(--infoWidth) + 6 * var(--menuColWidth)),
-				calc(var(--infoWidth) + (100vw - var(--infoWidth)) * 6 / 15)
-			);
-			width: min(
-				calc((100vw - var(--infoWidth)) * 9 / 15),
-				calc(100vw - var(--infoWidth) - 6 * var(--menuColWidth))
-			);
-		}
+	[data-page='home'],
+	[data-page='policy'],
+	[data-page='education'],
+	[data-page='singleWork'],
+	[data-page='singleEducation'], {
+		--bgColor: var(--black);
+		--fgColor: var(--white);
+	}
+	[data-page='about'],
+	[data-page='works'] {
+		--bgColor: var(--white);
+		--fgColor: var(--black);
+		transition-delay: 0ms;
 	}
 
 	.redirecting {
 		visibility: hidden;
 	}
 
-	#background {
-		// position: fixed;
+	#page {
 		inset: 0;
 		bottom: var(--headerHeight);
 		z-index: 1;
+
+		&.fullscreen {
+			bottom: 0;
+			z-index: 4;
+			background-color: var(--black);
+		}
 	}
 
-	#fullscreen {
-		// position: fixed;
-		inset: 0;
-		z-index: 4;
-		background-color: var(--black);
-	}
+	// #back-backdrop {
+	// 	position: fixed;
+	// 	left: 0;
+	// 	top: 0;
+	// 	z-index: 4;
+	// 	cursor: pointer;
+	// 	height: 100vh;
+	// 	width: var(--infoWidth);
+	// }
 
-	#back-backdrop {
+	.info-bg {
 		position: fixed;
 		left: 0;
 		top: 0;
-		z-index: 4;
-		cursor: pointer;
-		height: 100vh;
+		bottom: 0;
 		width: var(--infoWidth);
+		background-color: var(--black);
+		z-index: 4;
+		pointer-events: none;
 	}
 
-	#overlay {
+	.overlay {
 		position: fixed;
 		top: 0;
-		left: var(--infoWidth);
+		left: 0;
 		right: 0;
 		bottom: 0;
-		z-index: 5;
-		overflow: hidden;
+		z-index: 3;
 		pointer-events: none;
+
+		.panel {
+			background-color: var(--bgColor);
+			color: var(--fgColor);
+			position: absolute;
+			left: var(--infoWidth);
+			top: 0;
+			bottom: 0;
+			width: max(calc(6 * var(--menuColWidth)), calc((100vw - var(--infoWidth)) * 6 / 15));
+			overflow: hidden;
+			pointer-events: all;
+
+			&[data-overlay='/works'],
+			&[data-overlay='/about'] {
+				--bgColor: var(--white);
+				--fgColor: var(--black);
+			}
+		}
 	}
 </style>

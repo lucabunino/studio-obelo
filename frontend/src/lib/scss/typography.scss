@@ -29,9 +29,16 @@
 
 	@media (width <= bp.$md) {
 		&-s,
-		&-s-md	{ font-size: .7rem; letter-spacing: -0.01em; line-height: 1.2; font-weight: 350; }
+		&-s-md	{ font-size: 1.1538rem; letter-spacing: -0.01em; line-height: 1.2; font-weight: 350; }
 		&-m,
-		&-m-md	{ font-size: 1.5rem; letter-spacing: -0.02em; line-height: 1; font-weight: 350; }
+		&-m-md	{ font-size: 1.1538rem; letter-spacing: -0.01em; line-height: 1.2; font-weight: 350; }
+	}
+
+	@media (width <= bp.$xxs) {
+		&-s,
+		&-s-md	{ font-size: 1rem; letter-spacing: -0.01em; line-height: 1.2; font-weight: 350; }
+		&-m,
+		&-m-md	{ font-size: 1rem; letter-spacing: -0.01em; line-height: 1.2; font-weight: 350; }
 	}
 }
 .bold			{ font-weight: 700; }

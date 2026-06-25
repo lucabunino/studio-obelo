@@ -3,6 +3,8 @@ export function obelo(node) {
 	node.innerHTML = ''
 	node.setAttribute('aria-label', chars.join(''))
 
+	node.dataset.obelo = ''
+
 	const timers = new Map()
 	let lastTouch = 0
 
@@ -33,6 +35,13 @@ export function obelo(node) {
 		return span
 	})
 
+	function onNodeOut(e) {
+		if (node.contains(e.relatedTarget)) return
+		timers.forEach(t => clearTimeout(t))
+		timers.clear()
+		spans.forEach((span, i) => { span.textContent = chars[i] })
+	}
+
 	function onTouchStart() {
 		lastTouch = Date.now()
 		timers.forEach(t => clearTimeout(t))
@@ -53,10 +62,12 @@ export function obelo(node) {
 		})
 	}
 
+	node.addEventListener('mouseleave', onNodeOut)
 	node.addEventListener('touchstart', onTouchStart, { passive: true })
 
 	return {
 		destroy() {
+			node.removeEventListener('mouseenter', onNodeOut)
 			node.removeEventListener('touchstart', onTouchStart)
 			timers.forEach(t => clearTimeout(t))
 		}

@@ -1,4 +1,7 @@
+import { getSwiperStep } from '$lib/stores/swiperStep.svelte.js'
+
 export function obeloGrid(node, params = {}) {
+	const swiperStep = getSwiperStep()
 	const prevPosition = node.style.position
 	const computed = window.getComputedStyle(node)
 	if (computed.position === 'static') node.style.position = 'relative'
@@ -119,9 +122,10 @@ export function obeloGrid(node, params = {}) {
 				velocityY += (lastTouchY - e.touches[0].clientY) * scrollFactor
 				lastTouchY = e.touches[0].clientY
 			}
-			function onSwiperStep(e) {
-				targetX += (e.detail.direction === 'next' ? 1 : -1) * colWidth
-			}
+			$effect(() => {
+				const { seq, direction } = swiperStep
+				if (seq > 0) targetX += (direction === 'next' ? 1 : -1) * colWidth
+			})
 
 			function tick() {
 				if (halfHeight && halfWidth) {
@@ -144,15 +148,12 @@ export function obeloGrid(node, params = {}) {
 			window.addEventListener('wheel', onWheel, { passive: true })
 			window.addEventListener('touchstart', onTouchStart, { passive: true })
 			window.addEventListener('touchmove', onTouchMove, { passive: true })
-			window.addEventListener('obelo-swiper-step', onSwiperStep)
-
 			cleanup = () => {
 				cancelAnimationFrame(rafId)
 				ro.disconnect()
 				window.removeEventListener('wheel', onWheel)
 				window.removeEventListener('touchstart', onTouchStart)
 				window.removeEventListener('touchmove', onTouchMove)
-				window.removeEventListener('obelo-swiper-step', onSwiperStep)
 			}
 
 		} else {
@@ -181,7 +182,7 @@ export function obeloGrid(node, params = {}) {
 				const span = document.createElement('span')
 				span.textContent = '÷'
 				span.style.opacity = '0'
-				span.style.transition = `opacity 0.4s ease ${i * 6}ms`
+				span.style.transition = `opacity 0.4s ease ${i * 100}ms`
 				div.appendChild(span)
 			}
 

@@ -21,12 +21,12 @@
 {#if visible}
 	<div id="cookie-banner" class="glass-1" role="dialog" aria-label="Cookie consent" aria-modal="false" in:typewriter={{ duration: 400 }}>
 		<p>This website uses only technical cookies, which are necessary for its proper functioning. No profiling or third-party cookies are used. For more details, please consult our cookies and privacy policies.</p>
-		<button use:obelo class="hover-yellow" onclick={accept}>Ok, I understand</button>
+		<button class="hover-yellow" onclick={accept}><span use:obelo>Ok, I understand</span></button>
 	</div>
 {/if}
 
 <style lang="scss">
-	@use '$lib/scss/breakpoints.module' as *;
+	@use '$lib/scss/breakpoints.module' as bp;
 
 	#cookie-banner {
 		position: fixed;
@@ -41,7 +41,14 @@
 		z-index: 10;
 
 		button {
+			display: flex;
 			width: fit-content;
+		}
+
+		@media (width <= bp.$md) {
+			max-width: unset;
+			left: var(--sp-12);
+			bottom: var(--headerHeight);
 		}
 	}
 </style>

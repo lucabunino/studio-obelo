@@ -3,6 +3,7 @@ export function marquee(node) {
 
 	function onEnter() {
 		if (node.scrollWidth <= node.offsetWidth) return
+		if (node.querySelector('.marquee-track')) return
 
 		const duration = node.scrollWidth / 30
 		const originalChildren = [...node.childNodes]
@@ -34,13 +35,17 @@ export function marquee(node) {
 		node.style.textOverflow = ''
 	}
 
+	function onOut(e) {
+		if (!trigger.contains(e.relatedTarget)) onLeave()
+	}
+
 	trigger.addEventListener('mouseenter', onEnter)
-	trigger.addEventListener('mouseleave', onLeave)
+	trigger.addEventListener('mouseleave', onOut)
 
 	return {
 		destroy() {
 			trigger.removeEventListener('mouseenter', onEnter)
-			trigger.removeEventListener('mouseleave', onLeave)
+			trigger.removeEventListener('mouseleave', onOut)
 		}
 	}
 }

@@ -11,7 +11,7 @@ export function isOverlayActive(href) {
 export async function handleOverlay(e, href) {
 	e.preventDefault()
 	if (isOverlayActive(href)) {
-		goto(page.state.lastFullscreen ?? '/')
+		goto(page.state.lastFullscreen ?? '/', { noScroll: true })
 		return
 	}
 	const hrefPathname = href.split('?')[0]

@@ -1,12 +1,14 @@
 <script>
-	import { goto, preloadData, replaceState } from '$app/navigation'
+	import { beforeNavigate, goto, preloadData, replaceState } from '$app/navigation'
 	import { page } from '$app/state'
 	import { fade } from 'svelte/transition'
 	import { typewriter, resetTypewriter } from '$lib/utils/typewriter.js'
 	import { onMount, onDestroy } from 'svelte'
 	import Media from '$lib/components/Media.svelte'
 	import { marquee } from '$lib/utils/marquee.js'
-    import { obelo } from '$lib/utils/obelo.js';
+	import { obelo } from '$lib/utils/obelo.js'
+	import timing from '$lib/scss/timing.module.scss'
+    import { obeloGrid } from '$lib/utils/obeloGrid.svelte.js';
 
 	let { data } = $props()
 	let activeFilters = $state(page.url.searchParams.getAll('filter'))
@@ -17,11 +19,12 @@
 			return { ...w, inactive: !activeFilters.some(f => slugs.includes(f)) }
 		})
 	)
-	const STEP = 10
-	const OUT_DURATION = 200
-	const RIPPLE = 3
+	const DURATION = parseInt(timing.overlayDuration)
+	const STEP = 20
+	const OUT_DURATION = 300
+	const RIPPLE = 10
 	let loaded = $state(false)
-	let filtersReady = $state(false)
+	let worksLoaded = $state(false)
 	let isSorting = $state(false)
 	let activeWork = $state(null)
 
@@ -45,9 +48,11 @@
 		syncFiltersToUrl(next)
 	}
 
-	let alive = true
-	onMount(() => { resetTypewriter(); loaded = true; filtersReady = true })
-	onDestroy(() => { alive = false })
+	$effect(() => {
+		resetTypewriter();
+		const t = setTimeout(() => { loaded = true; worksLoaded = true; }, DURATION)
+		return () => clearTimeout(t)
+	})
 
 	async function setSort(key) {
 		let next
@@ -56,7 +61,7 @@
 		else next = key === 'year' ? 'year-desc' : 'title-asc'
 		const outDuration = (filteredWorks.length - 1) * RIPPLE + OUT_DURATION
 		isSorting = true
-		loaded = false
+		worksLoaded = false
 		await new Promise(r => setTimeout(r, outDuration))
 		const url = `/works${buildSearch(next, activeFilters)}`
 		if (page.state.overlay) {
@@ -67,64 +72,68 @@
 		} else {
 			await goto(url, { replaceState: true, noScroll: true })
 		}
-		if (!alive) return
 		resetTypewriter()
-		loaded = true
+		worksLoaded = true
 		isSorting = false
 	}
 </script>
 
-<main>
-	<h1 class="sr-only">Works</h1>
-		<div class="content">
-			<div class="top">
-				<nav id="sorters" role="group" aria-label="Sorters">
-					<button class="sorter title"
-						aria-pressed={sort?.startsWith('title')}
-						aria-label="Sort by title{sort === 'title-asc' ? ', ascending' : sort === 'title-desc' ? ', descending' : ''}"
-						onclick={() => setSort('title')}
-					>Title<span class="arrow">{sort === 'title-asc' ? ' ▲' : sort === 'title-desc' ? ' ▼' : ''}</span></button>
-					<button class="sorter year"
-						aria-pressed={sort?.startsWith('year')}
-						aria-label="Sort by year{sort === 'year-desc' ? ', descending' : sort === 'year-asc' ? ', ascending' : ''}"
-						onclick={() => setSort('year')}
-					><span class="arrow">{sort === 'year-desc' ? '▼ ' : sort === 'year-asc' ? '▲ ' : ''}</span>Year</button>
-				</nav>
-				<div id="works" aria-label="Works">
-					<ul class="works" onmouseleave={() => activeWork = null}>
-						{#each filteredWorks as work, i (work._id)}
-							{#if loaded}
-								<li class="work hover-yellow"
-								class:inactive={work.inactive}
-								onmouseenter={() => { activeWork = work}}
-								in:typewriter|global={{ duration: 30, delay: isSorting ? i * STEP : undefined }}
-								out:typewriter|global={{ duration: OUT_DURATION, clean: true, delay: (filteredWorks.length - 1 - i) * RIPPLE }}
-								>
-									<a href="/works/{work.slug.current}">
-										<h2 class="title ellipsis" use:marquee use:obelo>{work.title}</h2>
-										{#if work.services?.length}
-											<ul class="services ellipsis" use:marquee aria-label="Services">
-												{#each work.services as service, i (service.title)}
-													<li class="service" use:obelo>{service.title}</li>{#if i+1 < work.services.length}{@html ',&nbsp;'}{/if}
-												{/each}
-											</ul>
-										{/if}
-										<p class="year ellipsis">
-											{#if work.ongoing}
-												<span use:obelo>Ongoing</span>
-											{:else}
-												<time use:obelo datetime={work.startDate}>{work.startDate?.slice(0, 4)}</time>{#if work.endDate}–<time datetime={work.endDate}>{work.endDate?.slice(0, 4)}</time>{/if}
+{#if loaded}
+	<main>
+		<h1 class="sr-only">Works</h1>
+			<div class="content">
+				<div class="top">
+					<nav id="sorters" role="group" aria-label="Sorters">
+						<button class="sorter title"
+							aria-pressed={sort?.startsWith('title')}
+							aria-label="Sort by title{sort === 'title-asc' ? ', ascending' : sort === 'title-desc' ? ', descending' : ''}"
+							onclick={() => setSort('title')}
+						>Title<span class="arrow">{sort === 'title-asc' ? ' ▲' : sort === 'title-desc' ? ' ▼' : ''}</span></button>
+						<button class="sorter year"
+							aria-pressed={sort?.startsWith('year')}
+							aria-label="Sort by year{sort === 'year-desc' ? ', descending' : sort === 'year-asc' ? ', ascending' : ''}"
+							onclick={() => setSort('year')}
+						><span class="arrow">{sort === 'year-desc' ? '▼ ' : sort === 'year-asc' ? '▲ ' : ''}</span>Year</button>
+					</nav>
+					<div id="works" aria-label="Works">
+						<ul class="works" onmouseleave={() => activeWork = null}
+						>
+							{#each filteredWorks as work, i (work._id)}
+								{#if worksLoaded}
+									<li class="work hover-yellow"
+									class:inactive={work.inactive}
+									data-out-delay={(filteredWorks.length - 1 - i) * RIPPLE}
+									onmouseenter={() => { activeWork = work}}
+									onintroend={(e) => e.currentTarget.dataset.introDone = '1'}
+									in:typewriter|global={{ delay: i * STEP }}
+									out:typewriter|global={{ duration: OUT_DURATION, clean: true }}
+									>
+										<a href="/works/{work.slug.current}">
+											<h2 class="title ellipsis" use:marquee use:obelo>{work.title}</h2>
+											{#if work.services?.length}
+												<ul class="services ellipsis" use:marquee aria-label="Services">
+													{#each work.services as service, i (service.title)}
+														<li class="service" use:obelo>{service.title}</li>{#if i+1 < work.services.length}{@html ',&nbsp;'}{/if}
+													{/each}
+												</ul>
 											{/if}
-										</p>
-									</a>
-								</li>
-							{/if}
-						{/each}
-					</ul>
+											<p class="year ellipsis">
+												{#if work.ongoing}
+													<span use:obelo>Ongoing</span>
+												{:else}
+													<time use:obelo datetime={work.startDate}>{work.startDate?.slice(0, 4)}</time>{#if work.endDate}–<time datetime={work.endDate}>{work.endDate?.slice(0, 4)}</time>{/if}
+												{/if}
+											</p>
+										</a>
+									</li>
+								{/if}
+							{/each}
+						</ul>
+					</div>
 				</div>
-			</div>
-			{#if filtersReady}
-				<div class="bottom" in:typewriter|global={{ duration: 800 }}>
+				<div class="bottom" in:typewriter={{ delay: filteredWorks.length*STEP }}
+				out:typewriter|global={{ duration: DURATION, clean: true }}
+				>
 					<nav id="filters" aria-labelledby="filters-label">
 						<div class="titles">
 							<h2 id="filters-label">Filters</h2>
@@ -134,26 +143,25 @@
 						</div>
 						<div class="filters">
 							{#each data.filters as filter, i (filter.title)}
-									<button
-										class="filter"
-										data-type={filter.type}
-										aria-pressed={activeFilters.includes(filter.slug)}
-										onclick={() => toggleFilter(filter.slug)}
-									><span use:obelo>{filter.title}</span></button>
+								<button
+									class="filter"
+									data-type={filter.type}
+									aria-pressed={activeFilters.includes(filter.slug)}
+									onclick={() => toggleFilter(filter.slug)}
+								><span use:obelo>{filter.title}</span></button>
 							{/each}
 						</div>
 					</nav>
 				</div>
-			{/if}
-		</div>
-	<aside id="preview" aria-label="Work preview">
-		{#if activeWork}
-			<div class="media-wrapper">
-				<Media media={activeWork.thumbnail} />
 			</div>
+		{#if activeWork}
+			<aside id="preview" aria-label="Work preview">
+				<div class="obelo-grid overlay glass-2" use:obeloGrid={{cols: 6, rows: 8, loop: true}}></div>
+				<Media media={activeWork.thumbnail} class={'preview'}/>
+			</aside>
 		{/if}
-	</aside>
-</main>
+	</main>
+{/if}
 
 <style lang="scss">
 	@use '$lib/scss/breakpoints.module' as *;
@@ -161,21 +169,14 @@
 	main {
 		height: 100%;
 		width: 100%;
-		display: grid;
-		grid-template-columns: repeat(6, minmax(var(--menuColWidth), 1fr)) repeat(9, 1fr);
-		padding: 0 0 var(--headerHeight) 0;
 
 		.content {
 			display: flex;
 			flex-direction: column;
 			justify-content: space-between;
 			overflow-y: scroll;
-			grid-column: 1 / span 6;
-			background-color: var(--white);
-			color: var(--black);
 			padding: 0 var(--sp-12);
 			height: 100vh;
-			pointer-events: all;
 
 			.top {
 				#sorters {
@@ -184,7 +185,7 @@
 					padding: var(--sp-12) 0 var(--sp-6);
 					display: flex;
 					justify-content: space-between;
-					background-color: var(--white);
+					background-color: var(--bgColor);
 					z-index: 1;
 	
 					&::after {
@@ -194,16 +195,17 @@
 						left: 0;
 						right: 0;
 						height: var(--sp-12);
-						background: linear-gradient(to bottom, var(--white), transparent);
+						background: linear-gradient(to bottom, var(--bgColor), transparent);
 						pointer-events: none;
 					}
 					.sorter {
-						color: var(--black-50);
+						color: var(--fgColor);
+						opacity: .5;
 						.arrow {
 							font-variant: unicase;
 						}
 						&:hover, &[aria-pressed=true] {
-							color: var(--black);
+							opacity: 1;
 						}
 					}
 					.title {
@@ -259,7 +261,7 @@
 			.bottom {
 				position: sticky;
 				bottom: 0;
-				background-color: var(--white);
+				background-color: var(--bgColor);
 				z-index: 1;
 				padding-bottom: var(--headerHeight);
 
@@ -271,7 +273,7 @@
 						left: 0;
 						right: 0;
 						height: var(--sp-24);
-						background: linear-gradient(to top, var(--white), transparent);
+						background: linear-gradient(to top, var(--bgColor), transparent);
 						pointer-events: none;
 					}
 		
@@ -319,23 +321,14 @@
 			}
 		}
 		#preview {
-			grid-column: 7 / span 9;
+			position: fixed;
+			top: 0;
+			bottom: 0;
+			left: max(calc(var(--infoWidth) + 6 * var(--menuColWidth)), calc(var(--infoWidth) + (100vw - var(--infoWidth)) * 6 / 15));
+			right: 0;
 			display: flex;
 			justify-content: center;
 			align-items: center;
-			height: 100vh;
-
-			.media-wrapper {
-				width: 70%;
-				height: 60%;
-				z-index: 1;
-
-				:global(.media-container), :global(img), :global(video) {
-					width: 100%;
-					height: 100%;
-					object-fit: contain;
-				}
-			}
 		}
 	}
 </style>

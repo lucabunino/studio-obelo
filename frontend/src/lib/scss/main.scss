@@ -1,4 +1,16 @@
 @use '$lib/scss/breakpoints.module' as bp;
+@use '$lib/scss/timing.module' as timing;
+
+@property --bgColor {
+	syntax: '<color>';
+	inherits: true;
+	initial-value: #F5F5F5;
+}
+@property --fgColor {
+	syntax: '<color>';
+	inherits: true;
+	initial-value: #231F20;
+}
 
 :root {
 	--white: #F5F5F5;
@@ -15,7 +27,14 @@
 	--footerHeight: 4rem;
 	--infoWidth: 250px;
 	--menuColWidth: 80px;
-	--transition: cubic-bezier(.77, 0, .175, 1) 300ms;
+	--transition: cubic-bezier(.77, 0, .175, 1) var(--transitionDuration);
+	--transition-s: cubic-bezier(.77, 0, .175, 1) var(--fadeDuration);
+
+	--overlayDuration: #{timing.$overlay-duration}ms;
+	--transitionDuration: #{timing.$transition-duration}ms;
+	--fadeDuration: #{timing.$fade-duration}ms;
+	--typewriterHold: #{timing.$typewriter-hold}ms;
+	--typewriterMinDuration: #{timing.$typewriter-min-duration}ms;
 }
 
 html {
@@ -25,10 +44,6 @@ html {
 	overscroll-behavior-x: none;
 	background-color: var(--black);
 	color: var(--white);
-
-	@media (width <= bp.$lg) {
-		font-size: 12px;
-	}
 }
 
 main {
@@ -53,11 +68,34 @@ main {
 	border: 0;
 }
 
+.obelo-grid {
+	position: fixed;
+	inset: 0;
+	width: 100vw;
+	height: 100vh;
+	z-index: 1;
+	pointer-events: none;
+	color: var(--white);
+
+	&.overlay {
+		z-index: -1;
+		
+		left: max(
+			calc(var(--infoWidth) + 6 * var(--menuColWidth)),
+			calc(var(--infoWidth) + (100vw - var(--infoWidth)) * 6 / 15)
+		);
+		width: min(
+			calc((100vw - var(--infoWidth)) * 9 / 15),
+			calc(100vw - var(--infoWidth) - 6 * var(--menuColWidth))
+		);
+	}
+}
+
 .glass-1 {
 	-webkit-backdrop-filter: blur(10px) saturate(1.2);
     transform: translateZ(0);
 	--fx-filter: blur(10px) liquid-glass(2, 10, 1) saturate(1.25) color-overlay(white,.2) noise(.3, 1, .03);
-	position: relative;
+	// position: relative;
 	overflow: hidden;
 	background: rgba(245, 245, 245, 0.15);
 	border-radius: 3px;
@@ -77,18 +115,10 @@ main {
 	-webkit-backdrop-filter: blur(10px) saturate(1.2);
     transform: translateZ(0);
 	--fx-filter: blur(10px) liquid-glass(2, 100, 1) saturate(1.2) color-overlay(white,.05) noise(.3, 1, .03);
-	position: relative;
+	// position: relative;
 	overflow: hidden;
 	background: rgba(245, 245, 245, 0.15);
 	border-radius: 1px;
-}
-.obelo-grid {
-	position: fixed !important;
-	inset: 0;
-	width: 100%;
-	height: 100%;
-	z-index: -1;
-	pointer-events: none;
 }
 .yellow,
 .hover-yellow {
@@ -131,6 +161,10 @@ main {
 		white-space: nowrap;
 		padding-right: 2em;
 	}
+}
+
+[data-typing] *::after {
+	opacity: 0;
 }
 
 .portableText {

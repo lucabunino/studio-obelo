@@ -13,11 +13,14 @@ const media = `
 	type,
 	columns,
 	type == "image" => {
-		image { asset->{ _id, altText, title, description, metadata { dimensions, lqip } } }
+		image { asset->{ _id, altText, title, description, metadata { dimensions, lqip } } },
+		imageMobile { asset->{ _id, altText, title, description, metadata { dimensions, lqip } } },
 	},
 	type == "video" => {
 		video { asset->{ url, mimeType, size } },
+		videoMobile { asset->{ url, mimeType, size } },
 		videoPoster { asset->{ _id, altText, title, description, metadata { dimensions, lqip } } },
+		videoPosterMobile { asset->{ _id, altText, title, description, metadata { dimensions, lqip } } },
 	}
 `
 

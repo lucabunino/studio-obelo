@@ -14,11 +14,11 @@
 	let loaded = $state(false)
 
 	$effect(() => {
+		resetTypewriter(); loaded = true
 		function track(e) { mouseX = e.clientX; mouseY = e.clientY }
 		window.addEventListener('mousemove', track)
 		return () => window.removeEventListener('mousemove', track)
 	})
-	onMount(() => { resetTypewriter(); loaded = true })
 
 	const lines = $derived([title, subtitle, year].filter(Boolean))
 	const below = $derived(mouseY === null || mouseY < window.innerHeight - 80)
@@ -75,7 +75,7 @@
 	{#if loaded && mouseX !== null}
 		<span
 			bind:this={els[i]}
-			in:typewriter={{ duration: 800 }}
+			in:typewriter={{ duration: line.length*15, fade: false, hold: false }}
 			class="cursor-line yellow"
 			style="left: {clampCenter(mirrorEls[i], mouseX)}px; top: {getTop(i)}px; transform: translateX(-50%)"
 		>{line}</span>
@@ -89,6 +89,10 @@
 		white-space: nowrap;
 		z-index: 1;
 		line-height: 1.3;
+
+		@media (pointer: coarse) {
+			display: none;
+		}
 	}
 	.mirror {
 		visibility: hidden;

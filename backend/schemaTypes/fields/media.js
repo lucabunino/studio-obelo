@@ -19,6 +19,12 @@ export const mediaFields = [
 			Rule.custom((v, c) => (c.parent.type === 'image' && !v ? 'Required' : true)),
 	},
 	{
+		name: 'imageMobile',
+		title: 'Image (mobile)',
+		type: 'image',
+		hidden: ({parent}) => parent?.type !== 'image',
+	},
+	{
 		name: 'video',
 		type: 'file',
 		options: {accept: 'video/mp4'},
@@ -27,11 +33,24 @@ export const mediaFields = [
 			Rule.custom((v, c) => (c.parent.type === 'video' && !v ? 'Required' : true)),
 	},
 	{
+		name: 'videoMobile',
+		title: 'Video (mobile)',
+		type: 'file',
+		options: {accept: 'video/mp4'},
+		hidden: ({parent}) => parent?.type !== 'video',
+	},
+	{
 		name: 'videoPoster',
 		type: 'image',
 		hidden: ({parent}) => parent?.type !== 'video',
 		validation: Rule =>
 			Rule.custom((v, c) => (c.parent.type === 'video' && !v ? 'Required' : true)),
+	},
+	{
+		name: 'videoPosterMobile',
+		title: 'Video poster (mobile)',
+		type: 'image',
+		hidden: ({parent}) => parent?.type !== 'video',
 	},
 ]
 

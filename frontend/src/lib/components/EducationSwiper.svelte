@@ -5,16 +5,20 @@
 	import { page } from '$app/state'
 	import Media from '$lib/components/Media.svelte'
 	import { obelo } from '$lib/utils/obelo.js'
+	import { getSwiperStep } from '$lib/stores/swiperStep.svelte.js'
+
+	const swiperStep = getSwiperStep()
 
 	register()
 
 	let { educations, slug } = $props()
 
-	let swiperEl = $state()
+	let ready = $state(false)
+	let swiperEl = $state(undefined)
 	let hoverSide = $state(null)
-	const tilt = $derived(hoverSide === 'left' ? '-2deg' : hoverSide === 'right' ? '2deg' : '0deg')
-	const peekPrev = $derived(hoverSide === 'left' ? '48px' : '0px')
-	const peekNext = $derived(hoverSide === 'right' ? '-48px' : '0px')
+	const tilt = $derived(hoverSide === 'left' ? 'perspective(800px) rotateY(-2deg)' : hoverSide === 'right' ? 'perspective(800px) rotateY(2deg)' : 'perspective(800px) rotateY(0deg)')
+	const peekPrev = $derived(hoverSide === 'left' ? 'translateX(48px)' : 'translateX(0px)')
+	const peekNext = $derived(hoverSide === 'right' ? 'translateX(-48px)' : 'translateX(0px)')
 
 	const slides = $derived(
 		educations.items
@@ -56,7 +60,7 @@
 			loopAdditionalSlides: 4,
 			slideToClickedSlide: true,
 			initialSlide,
-			keyboard: { enabled: false },
+			keyboard: { enabled: true },
 			mousewheel: {
                 forceToAxis: true,
                 sensitivity: 1,
@@ -74,30 +78,20 @@
 					opacity: 1,
 				},
 			},
+			on: {
+				slideNextTransitionStart() { activeRealIndex = this.realIndex; swiperStep.step('next') },
+				slidePrevTransitionStart() { activeRealIndex = this.realIndex; swiperStep.step('prev') },
+				slideChangeTransitionEnd() {
+					if (ready && activeSlide && !page.state.overlay) replaceState(`/education/${activeSlide.slug}#i=${activeSlide.imageIndex}`, {})
+				},
+			},
 		})
 		swiperEl.initialize()
-		
-		swiperEl.swiper.on('slideNextTransitionStart', () => {
-			activeRealIndex = swiperEl.swiper.realIndex
-			window.dispatchEvent(new CustomEvent('obelo-swiper-step', { detail: { direction: 'next' } }))
-		})
-		swiperEl.swiper.on('slidePrevTransitionStart', () => {
-			activeRealIndex = swiperEl.swiper.realIndex
-			window.dispatchEvent(new CustomEvent('obelo-swiper-step', { detail: { direction: 'prev' } }))
-		})
-		swiperEl.swiper.on('slideChangeTransitionEnd', () => {
-			if (activeSlide && !page.state.overlay) replaceState(`/education/${activeSlide.slug}#i=${activeSlide.imageIndex}`, {})
-		})
-
-		function onKeyDown(e) {
-			if (e.key === 'ArrowLeft') swiperEl.swiper.slidePrev()
-			else if (e.key === 'ArrowRight') swiperEl.swiper.slideNext()
-			else if (e.key === 'Escape' && !page.state.overlay) closeSwiper()
-		}
-		window.addEventListener('keydown', onKeyDown)
-		return () => window.removeEventListener('keydown', onKeyDown)
+		ready = true
 	})
 </script>
+
+<svelte:window onkeydown={(e) => { if (e.key === 'Escape' && !page.state.overlay) closeSwiper() }} />
 
 {#if !page.state.overlay}
 	<button class="close" onclick={closeSwiper} use:obelo>× Close</button>
@@ -193,13 +187,13 @@
 			filter: blur(0) saturate(1);
 		}
 
-		&:global(.swiper-slide-active) {
-			perspective: 800px;
-		}
-
 		&:global(.swiper-slide-active) .single-education-wrapper {
-			transform: rotateY(var(--slide-tilt, 0deg));
+			transform: var(--slide-tilt, perspective(800px) rotateY(0deg));
 			transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+			:global(.media-container) {
+				overflow: visible;
+			}
 		}
 
 		&:global(.swiper-slide-prev),
@@ -208,12 +202,12 @@
 		}
 
 		&:global(.swiper-slide-prev) .single-education-wrapper {
-			transform: translateX(var(--peek-prev, 0px));
+			transform: var(--peek-prev, translateX(0px));
 			transition: transform 0.35s ease;
 		}
 
 		&:global(.swiper-slide-next) .single-education-wrapper {
-			transform: translateX(var(--peek-next, 0px));
+			transform: var(--peek-next, translateX(0px));
 			transition: transform 0.35s ease;
 		}
 

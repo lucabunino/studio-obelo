@@ -36,13 +36,6 @@ export default {
 		},
 		{...status, group: 'Info'},
 		{
-			name: 'place',
-			type: 'reference',
-			to: [{type: 'place'}],
-			group: 'Info',
-		},
-		{...media('thumbnail'), group: 'Media'},
-		{
 			name: 'ongoing',
 			type: 'boolean',
 			initialValue: false,
@@ -62,6 +55,12 @@ export default {
 			hidden: ({document}) => !!document?.ongoing,
 			group: 'Info',
 			fieldset: 'date',
+		},
+		{
+			name: 'place',
+			type: 'reference',
+			to: [{type: 'place'}],
+			group: 'Info',
 		},
 		{
 			name: 'services',
@@ -100,7 +99,9 @@ export default {
 			],
 			group: 'Info',
 		},
-		wysiwyg('description', 'Description'),
+		wysiwyg('description', 'Info'),
+		{...media('homepage'), group: 'Media'},
+		{...media('thumbnail'), group: 'Media'},
 		{
 			name: 'blocks',
 			type: 'array',
