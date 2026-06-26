@@ -157,7 +157,9 @@
 		{#if activeWork}
 			<aside id="preview" aria-label="Work preview">
 				<div class="obelo-grid overlay glass-2" use:obeloGrid={{cols: 6, rows: 8, loop: true}}></div>
-				<Media media={activeWork.thumbnail} class={'preview'}/>
+				{#key activeWork._id}
+					<Media media={activeWork.thumbnail} class={'preview'}/>
+				{/key}
 			</aside>
 		{/if}
 	</main>

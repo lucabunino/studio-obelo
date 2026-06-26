@@ -100,8 +100,8 @@ export default {
 			group: 'Info',
 		},
 		wysiwyg('description', 'Info'),
-		{...media('homepage'), group: 'Media'},
-		{...media('thumbnail'), group: 'Media'},
+		{...media('homepage'), group: 'Media', options: { collapsible: true, collapsed: true }},
+		{...media('thumbnail'), group: 'Media', options: { collapsible: true, collapsed: true }},
 		{
 			name: 'blocks',
 			type: 'array',

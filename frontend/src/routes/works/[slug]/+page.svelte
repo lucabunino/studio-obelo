@@ -9,6 +9,7 @@
     import { onMount } from 'svelte';
 	import { fade } from 'svelte/transition'
 	import timing from '$lib/scss/timing.module.scss'
+    import { innerHeight, innerWidth } from 'svelte/reactivity/window';
 	const DURATION = parseInt(timing.overlayDuration)
 	const FADE_DURATION = parseInt(timing.fadeDuration)
 
@@ -25,9 +26,11 @@
 	let relatedBlockEl = $state()
 
 	$effect(() => {
-		resetTypewriter();
-		const t = setTimeout(() => { loaded = true; }, DURATION)
-		return () => clearTimeout(t)
+		work.slug.current
+		loaded = false
+		resetTypewriter()
+		const t = setTimeout(() => { loaded = true }, DURATION * 2)
+		return () => { clearTimeout(t); loaded = false }
 	})
 
 	$effect(() => {
@@ -54,25 +57,39 @@
 			.map(b => b.work)
 	)
 
+	const zIndexes = $derived.by(() => {
+		const blocks = work.blocks ?? []
+		const zs = []
+		let z = 0
+		for (let i = 0; i < blocks.length; i++) {
+			z++
+			const isFloating = blocks[i]._type === 'workReference' && !blocks[i].marginBottom
+			const prevIsFloating = i > 0 && blocks[i - 1]._type === 'workReference' && !blocks[i - 1].marginBottom
+			if (isFloating) zs.push(z + 1)
+			else if (prevIsFloating) zs.push(z - 1)
+			else zs.push(z)
+		}
+		return zs
+	})
+
 </script>
 
-	<article>
-		<aside class="info" aria-label="Work information">
-			{#if loaded}
+{#if loaded}
+	{#key work.slug.current}
+		<article>
+			<aside class="info" aria-label="Work information">
 				<div class="content" in:typewriter|global out:typewriter|global={{ clean: true }}>
 					{#key scrollEnd}
-						<div class="wrapper" in:typewriter={{ duration: DURATION, delay: DURATION }} out:typewriter|global={{ clean: true }}>
+						<div class="wrapper" in:typewriter={{ duration: scrollEnd ? undefined : DURATION }} out:typewriter|global={{ duration: scrollEnd ? undefined : 14*15, clean: true }}>
 							{#if scrollEnd && (next || prev)}
-								<p class="center">Other projects:</p>
+								<p class="center uppercase">Other projects</p>
 							{:else}
 								<div class="top">
 									{#if work.title}
 										<h1 class="title">{work.title}</h1>
 									{/if}
 									{#if time}
-										<p class="time">{time}{#if work.place}
-											<span class="place">{@html ' – '}{work.place.title}</span>
-										{/if}</p>
+										<p class="time">{time}{#if work.place}<span class="place">{@html ' – '}{work.place.title}</span>{/if}</p>
 									{/if}
 									{#if work.services?.length}
 										<ul class="services" aria-label="Services">
@@ -97,10 +114,10 @@
 								</div>
 								{#if relatedWorks.length}
 									<div class="bottom">
-										<p id="related-label" class="uppercase">Related projects:</p>
+										<p id="related-label" class="uppercase">Related projects</p>
 										<ul class="related-projects" aria-labelledby="related-label">
-											{#each relatedWorks as rw}
-												<li><a class="hover-yellow" use:obelo href="/works/{rw.slug}">{rw.title}</a></li>
+											{#each relatedWorks as relatedWork}
+												<li class="related-project"><a class="hover-yellow" use:obelo href="/works/{relatedWork.slug}">{relatedWork.title}</a></li>
 											{/each}
 										</ul>
 									</div>
@@ -109,75 +126,81 @@
 						</div>
 					{/key}
 				</div>
-			{/if}
-		</aside>
+			</aside>
 
-		<div class="blocks" role="list">
-			{#each work.blocks ?? [] as block, i (block._key)}
-				{#if block._type === 'mediaBlock'}
-					<div class="block media-block {block.alignment}" class:first={i === 0} role="listitem" in:fade|global={{ delay: 100 + i * 100, duration: FADE_DURATION }} out:fade|global={{ duration: FADE_DURATION }}>
-						<div class="media-items" class:three-quarters={block.width === 'three-quarters'} class:half={block.width === 'half'}>
-							{#each block.items ?? [] as item}
-								<div class="media-item">
-									<Media media={item} class="work" />
-								</div>
-							{/each}
-						</div>
-						{#if block.caption && block.width !== 'full'}
-							<p class="caption">{block.caption}</p>
-						{/if}
-					</div>
-
-				{:else if block._type === 'textBlock'}
-					<div class="block text-block no-m" class:first={i === 0} role="listitem" in:fade|global={{ delay: 200 + i * 100, duration: FADE_DURATION }} out:fade|global={{ duration: FADE_DURATION }}>
-						{#if block.text}
-							<div class="text portableText">
-								<p>Vogliamo un blocco solo testo?</p>
-								<PortableText value={block.text} components={{ block: PortableTextStyle, marks: { link: PortableTextStyle } }} />
+			<div class="blocks" role="list">
+				{#each work.blocks ?? [] as block, i (block._key)}
+					{#if block._type === 'mediaBlock'}
+						{@const blockMode = ((innerWidth.current ?? 0) - 250)/(innerHeight.current ?? 1) < 8/5 ? 'sticky' : 'relative'}
+						<div class="block media-block {block.alignment} {blockMode}" class:first={i === 0} role="listitem" style:z-index={zIndexes[i]} in:fade|global={{ delay: DURATION + 100 + i * 100, duration: FADE_DURATION }} out:fade|global={{ duration: FADE_DURATION }}>
+							<div class="media-items" class:three-quarters={block.width === 'three-quarters'} class:half={block.width === 'half'}>
+								{#each block.items ?? [] as item}
+									<div class="media-item">
+										<Media media={item} class="work {blockMode}" />
+									</div>
+								{/each}
 							</div>
-						{/if}
-					</div>
-
-				{:else if block._type === 'workReference' && block.work}
-					<div class="block reference-block" class:first={i === 0} class:marginBottom={!block.marginBottom} role="listitem" in:fade|global={{ delay: 200 + i * 100, duration: FADE_DURATION }} out:fade|global={{ duration: FADE_DURATION }}>
-						<a class="link no-m glass-1" href="/works/{block.work.slug}"
-						onmouseenter={() => hoveredRef = block.work}
-						onmouseleave={() => hoveredRef = null}>
-							<span>Visit project:</span>
-							<span>{block.work.title}</span>
-						</a>
-					</div>
-				{/if}
-			{/each}
-
-			{#if prev || next}
-				<nav class="block related-block projects glass-2" aria-label="Other projects" use:obeloGrid={{cols: 6, rows: 8, loop: true}} bind:this={relatedBlockEl}>
-						<div class="links">
-							{#if prev}
-								<a href="/works/{prev.slug.current}" class="link"
-									onmouseenter={() => { hoveredNav = prev; hoveredNavArrow = '←' }}
-									onmouseleave={() => { hoveredNav = null; hoveredNavArrow = null }}
-								>
-									<div class="thumb">
-										<Media media={prev.thumbnail} class="nav" />
-									</div>
-								</a>
-							{/if}
-							{#if next}
-								<a href="/works/{next.slug.current}" class="link"
-									onmouseenter={() => { hoveredNav = next; hoveredNavArrow = '→' }}
-									onmouseleave={() => { hoveredNav = null; hoveredNavArrow = null }}
-								>
-									<div class="thumb">
-										<Media media={next.thumbnail} class="nav" />
-									</div>
-								</a>
+							{#if block.caption && block.width !== 'full'}
+								<div class="caption">
+									<p>{block.caption}</p>
+								</div>
 							{/if}
 						</div>
-				</nav>
-			{/if}
-		</div>
-	</article>
+
+					{:else if block._type === 'textBlock'}
+						<div class="block text-block no-m {block.alignment} {(innerWidth.current - 250)/innerHeight.current < 8/5 ? 'sticky' : 'relative'}" class:first={i === 0} role="listitem" style:z-index={zIndexes[i]}>
+							{#if block.text}
+								<div class="text portableText"
+									class:three-quarters={block.width === 'three-quarters'}
+									class:half={block.width === 'half'}
+									in:typewriter|global={{ delay: DURATION + 200 + i * 100 }}>
+									<PortableText value={block.text} components={{ block: PortableTextStyle, marks: { link: PortableTextStyle } }} />
+								</div>
+							{/if}
+						</div>
+
+					{:else if block._type === 'workReference' && block.work}
+						<div class="block reference-block {(innerWidth.current - 250)/innerHeight.current < 8/5 ? 'sticky' : 'relative'}" class:first={i === 0} class:marginBottom={block.marginBottom} role="listitem" style:z-index={zIndexes[i]}>
+							<a class="link no-m glass-1" href="/works/{block.work.slug}"
+							onmouseenter={() => hoveredRef = block.work}
+							onmouseleave={() => hoveredRef = null}>
+								<span>Visit project:</span>
+								<span>{block.work.title}</span>
+							</a>
+						</div>
+					{/if}
+				{/each}
+
+				{#if prev || next}
+					<nav class="block related-block projects glass-2" aria-label="Other projects" use:obeloGrid={{cols: 6, rows: 8, loop: true}} bind:this={relatedBlockEl} style:z-index={(work.blocks?.length ?? 0) + 2}>
+							<div class="links">
+								{#if prev}
+									<a href="/works/{prev.slug.current}" class="link"
+										onmouseenter={() => { hoveredNav = prev; hoveredNavArrow = '←' }}
+										onmouseleave={() => { hoveredNav = null; hoveredNavArrow = null }}
+									>
+										<div class="thumb">
+											<Media media={prev.thumbnail} class="nav" />
+										</div>
+									</a>
+								{/if}
+								{#if next}
+									<a href="/works/{next.slug.current}" class="link"
+										onmouseenter={() => { hoveredNav = next; hoveredNavArrow = '→' }}
+										onmouseleave={() => { hoveredNav = null; hoveredNavArrow = null }}
+									>
+										<div class="thumb">
+											<Media media={next.thumbnail} class="nav" />
+										</div>
+									</a>
+								{/if}
+							</div>
+					</nav>
+				{/if}
+			</div>
+		</article>
+	{/key}
+{/if}
 
 {#if hoveredNav}
 	<CursorTag
@@ -200,6 +223,7 @@
 
 	article {
 		display: block;
+		isolation: isolate;
 
 		.info {
 			position: fixed;
@@ -253,10 +277,10 @@
 						padding-top: var(--sp-36);
 						background: linear-gradient(to bottom, transparent, inherit var(--sp-24));
 						transition: var(--transition);
+						text-align: center;
 
-						.related-label {
-							opacity: 0.5;
-							margin-bottom: var(--sp-3);
+						#related-label {
+							margin-bottom: var(--sp-18);
 						}
 
 						.related-projects {
@@ -265,8 +289,12 @@
 							flex-direction: column;
 							gap: var(--sp-3);
 
-							a {
-								display: block;
+							.related-project {
+								align-self: center;
+
+								a {
+									display: block;
+								}
 							}
 						}
 					}
@@ -275,28 +303,32 @@
 		}
 
 		.blocks {
-			margin-left: var(--infoWidth);
+			margin-left: var(--infoWidth);			
 			
 			.block {
-				position: sticky;
-				top: 0;
-				padding-bottom: var(--sp-150);
+				&.sticky {
+					top: 0;
+					position: sticky;
+				}
+				&.relative {
+					position: relative;
+					padding-bottom: var(--sp-4);
+				}
 
 				&.first {
 					padding-bottom: var(--sp-4);
 				}
 
-				// &.media-block:not(.first) {
-				// 	height: 100vh;
-				// }
-
 				&.media-block {
 					display: flex;
 					align-items: flex-start;
-					background-color: var(--black);
 
-					&.align-right {
-						justify-content: flex-end;
+					&.center {
+						justify-content: center;
+					}
+
+					&.right {
+						flex-direction: row-reverse;
 					}
 
 					.media-items {
@@ -319,23 +351,57 @@
 					.caption {
 						padding: var(--sp-4);
 						flex: 1;
+						background-color: var(--black);
+						height: stretch;
+
+						p {
+							max-width: 60ch;
+						}
 					}
 				}
 
 				&.text-block {
-					background-color: var(--black);
-					border: solid red 1px;
-					padding: var(--sp-4) var(--sp-4) var(--sp-150);
+					display: flex;
+					align-items: flex-start;
+
+					&.sticky {
+						.text {
+							padding: var(--sp-12) var(--sp-4) var(--sp-150);
+						}
+					}
+					&.relative {
+						.text {
+							padding: var(--sp-12) var(--sp-4);
+						}
+					}
+
+					&.center {
+						justify-content: center;
+					}
+
+					&.right {
+						flex-direction: row-reverse;
+					}
 
 					.text {
-						max-width: 60ch;
+						width: 100%;
+						background-color: var(--black);
+						height: 100%;
+
+						&.three-quarters {
+							width: calc(100% - var(--infoWidth));
+							min-width: 50%;
+						}
+						&.half { width: 50%; }
 					}
 				}
 
 				&.reference-block {		
-					padding-bottom: 0;						
-					&:not(.marginBottom) {
-						border-bottom: solid var(--sp-150) var(--black);
+					padding-bottom: 0;
+					z-index: 2;
+
+					&.marginBottom {
+						margin-bottom: var(--sp-150);
 					}
 
 					.link {
@@ -356,15 +422,6 @@
 					overflow: hidden;
 					justify-content: center;
 					align-items: center;
-
-					// .label {
-					// 	width: var(--infoWidth);
-					// 	flex-shrink: 0;
-					// 	display: flex;
-					// 	align-items: center;
-					// 	justify-content: center;
-					// 	background-color: var(--black);
-					// }
 
 						.links {
 							position: relative;

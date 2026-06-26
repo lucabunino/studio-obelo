@@ -1,5 +1,5 @@
 <script>
-	import { fade } from 'svelte/transition'
+	import { fade, fly } from 'svelte/transition'
 	import Media from '$lib/components/Media.svelte'
 	import CursorTag from '$lib/components/CursorTag.svelte'
 	import { innerHeight, innerWidth } from 'svelte/reactivity/window'
@@ -26,7 +26,7 @@
 	const PAUSE_DURATION = 1000
 	const BASE_SPEED = 0.3
 	const FRICTION = .9
-	const START_DELAY = 4000
+	const START_DELAY = 3000
 
 	const isPortrait = $derived(innerHeight.current > innerWidth.current)
 	const infoText = getInfoText()
@@ -35,6 +35,20 @@
 		isPortrait
 		pos = 0
 		velocity = 0
+	})
+
+	$effect(() => {
+		let frameId
+		let cancelled = false
+		function loop() {
+			if (cancelled) return
+			update()
+			frameId = requestAnimationFrame(loop)
+		}
+		frameId = requestAnimationFrame(loop)
+		const timeout = setTimeout(() => { started = true }, START_DELAY)
+		loaded = true
+		return () => { cancelled = true; cancelAnimationFrame(frameId); clearTimeout(timeout) }
 	})
 
 	function update() {
@@ -52,20 +66,6 @@
 			}
 		}
 	}
-
-	$effect(() => {
-		let frameId
-		let cancelled = false
-		function loop() {
-			if (cancelled) return
-			update()
-			frameId = requestAnimationFrame(loop)
-		}
-		frameId = requestAnimationFrame(loop)
-		const timeout = setTimeout(() => { started = true }, START_DELAY)
-		loaded = true
-		return () => { cancelled = true; cancelAnimationFrame(frameId); clearTimeout(timeout) }
-	})
 
 	function getEventPos(e) { return isPortrait ? e.pageY : e.pageX }
 	function getTouchPos(e) { return isPortrait ? e.touches[0].pageY : e.touches[0].pageX }
@@ -168,7 +168,7 @@
 							ondragstart={(e) => e.preventDefault()}
 							onmouseenter={() => hoveredWork = work}
 							onmouseleave={() => hoveredWork = null}
-							in:fade={{ delay: DURATION*2 + i*100, duration: FADE_DURATION }}
+							in:fly={{ delay: DURATION + i*DURATION/4, duration: DURATION, x: '20vw' }}
 							out:fade|global={{ duration: FADE_DURATION }}
 						>
 							<Media media={work.thumbnail} class="homepage" />

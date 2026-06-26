@@ -27,6 +27,7 @@
 				item.education.media.map((media, i) => ({
 					media,
 					slug: item.education.slug.current,
+					title: item.education.title,
 					imageIndex: i + 1,
 				}))
 			)
@@ -34,6 +35,9 @@
 
 	let activeRealIndex = $state(0)
 	const activeSlide = $derived(slides[activeRealIndex])
+
+	const seoBase = $derived(Array.isArray(page.data?.seo) ? page.data.seo[0] : page.data?.seo)
+	const displayTitle = $derived(activeSlide?.title ? `${activeSlide.title} | ${seoBase?.seoTitle || ''}` : (seoBase?.seoTitle || ''))
 
 	function closeSwiper() {
 		if (!activeSlide) { goto('/education'); return }
@@ -79,19 +83,33 @@
 				},
 			},
 			on: {
-				slideNextTransitionStart() { activeRealIndex = this.realIndex; swiperStep.step('next') },
-				slidePrevTransitionStart() { activeRealIndex = this.realIndex; swiperStep.step('prev') },
+				afterInit() { ready = true },
+				slideNextTransitionStart() { activeRealIndex = this.realIndex; if (ready) swiperStep.step('next') },
+				slidePrevTransitionStart() { activeRealIndex = this.realIndex; if (ready) swiperStep.step('prev') },
 				slideChangeTransitionEnd() {
 					if (ready && activeSlide && !page.state.overlay) replaceState(`/education/${activeSlide.slug}#i=${activeSlide.imageIndex}`, {})
 				},
 			},
 		})
 		swiperEl.initialize()
-		ready = true
 	})
 </script>
 
+<svelte:head>
+	{#if displayTitle}
+		<title>{displayTitle}</title>
+		<meta name="title" content={displayTitle} />
+		<meta property="og:title" content={displayTitle} />
+		<meta name="twitter:title" content={displayTitle} />
+		<meta property="og:site_name" content={seoBase?.seoTitle} />
+	{/if}
+</svelte:head>
+
 <svelte:window onkeydown={(e) => { if (e.key === 'Escape' && !page.state.overlay) closeSwiper() }} />
+
+{#if activeSlide?.title}
+	<h1 class="edu-title">{activeSlide.title}</h1>
+{/if}
 
 {#if !page.state.overlay}
 	<button class="close" onclick={closeSwiper} use:obelo>× Close</button>
@@ -117,7 +135,6 @@
 	{#each slides as slide, i}
 		<swiper-slide>
 			<div class="single-education-wrapper">
-				<span class="index">{activeSlide?.imageIndex}</span>
 				<Media media={slide.media} class="single-education" />
 				{#if slide.media?.image?.asset?.description}
 					<span class="caption">{slide.media.image.asset.description}</span>
@@ -128,6 +145,14 @@
 </swiper-container>
 
 <style lang="scss">
+	.edu-title {
+		position: fixed;
+		top: var(--sp-12);
+		left: var(--sp-12);
+		z-index: 11;
+		pointer-events: none;
+	}
+
 	.close {
 		position: fixed;
 		top: var(--sp-12);
@@ -215,7 +240,7 @@
 			height: fit-content;
 			position: relative;
 
-			.index, .caption {
+			.caption {
 				display: block;
 				width: 100%;
 				text-align: center;
@@ -223,11 +248,6 @@
 				background-color: var(--black);
 				width: fit-content;
 				white-space: pre;
-			}
-			.index {
-				left: 50%;
-				top: calc(var(--sp-12)*-1);
-				transform: translateX(-50%) translateY(-100%);
 			}
 			.caption {
 				left: 50%;

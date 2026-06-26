@@ -7,15 +7,10 @@
 	const orientation = $derived(getOrientation(media))
 	const aspectRatio = $derived(media.type === 'image' ? media.image?.asset?.metadata?.dimensions?.aspectRatio : media.videoPoster?.asset?.metadata?.dimensions?.aspectRatio )
 
-	const lqipDesktop = $derived(
+	const paletteColor = $derived(
 		media.type === 'image'
-			? media.image?.asset?.metadata?.lqip
-			: media.videoPoster?.asset?.metadata?.lqip
-	)
-	const lqipMobile = $derived(
-		media.type === 'image'
-			? media.imageMobile?.asset?.metadata?.lqip
-			: media.videoPosterMobile?.asset?.metadata?.lqip
+			? media.image?.asset?.metadata?.palette?.dominant?.background
+			: media.videoPoster?.asset?.metadata?.palette?.dominant?.background
 	)
 
 	const desktopSrcset = $derived(media.type === 'image' ? buildSrcset(media.image) : '')
@@ -31,23 +26,14 @@
 
 <div
 	class="media-container {className}"
+	class:contain={media.contain}
+	class:object-center={media.contain && media.objectAlignment === 'center'}
+	class:object-right={media.contain && media.objectAlignment === 'right'}
 	data-orientation={orientation}
-	class:landscape={orientation === 'landscape'}
-	class:portrait={orientation === 'portrait'}
-	class:square={orientation === 'square'}
-	class:has-mobile-lqip={!!lqipMobile}
 	style:--aspectRatio={aspectRatio}
+	style:--paletteColor={paletteColor ?? 'var(--black)'}
+	style:--objectPosition={media.objectAlignment ?? 'left'}
 >
-	{#if lqipDesktop}
-		<img class="lqip lqip-desktop" class:loaded src={lqipDesktop} aria-hidden="true" alt="" />
-	{/if}
-	{#if lqipMobile}
-		<img class="lqip lqip-mobile" class:loaded src={lqipMobile} aria-hidden="true" alt="" />
-	{/if}
-	{#if lqipDesktop || lqipMobile}
-		<div class="lqip-blur" class:loaded aria-hidden="true"></div>
-	{/if}
-
 	{#if media.type === 'image'}
 		<picture>
 			{#if media.imageMobile}
@@ -60,7 +46,6 @@
 				alt={media.image?.asset?.altText ?? ''}
 				{sizes}
 				onload={() => loaded = true}
-				class:loaded
 			/>
 		</picture>
 	{:else if media.type === 'video'}
@@ -68,7 +53,6 @@
 			bind:this={videoEl}
 			autoplay muted loop playsinline
 			oncanplay={() => loaded = true}
-			class:loaded
 		>
 			{#if media.videoMobile}
 				<source media="(max-width: {parseInt(bp.md) - 1}px)" src={media.videoMobile?.asset?.url} type="video/mp4" />
@@ -76,6 +60,8 @@
 			<source src={media.video?.asset?.url} type="video/mp4" />
 		</video>
 	{/if}
+
+	<div class="color-overlay" class:loaded aria-hidden="true"></div>
 </div>
 
 <style lang="scss">
@@ -85,31 +71,7 @@
 		display: block;
 		position: relative;
 		overflow: hidden;
-
-		.lqip {
-			position: absolute;
-			inset: 0;
-			z-index: 0;
-			transition: var(--transition);
-
-			&.loaded { opacity: 0; }
-		}
-		.lqip-mobile {
-			@media (width >= bp.$md) { display: none; }
-		}
-		&.has-mobile-lqip .lqip-desktop {
-			@media (width < bp.$md) { display: none; }
-		}
-
-		.lqip-blur {
-			position: absolute;
-			inset: 0;
-			z-index: 2;
-			backdrop-filter: blur(20px) saturate(1.5);
-			transition: var(--transition);
-
-			&.loaded { opacity: 0; }
-		}
+		background-color: var(--paletteColor, var(--black));
 
 		picture {
 			display: contents;
@@ -118,10 +80,6 @@
 		img:not(.lqip), video {
 			position: relative;
 			z-index: 1;
-			opacity: 0;
-			transition: var(--transition);
-
-			&.loaded { opacity: 1; }
 		}
 
 		img, video {
@@ -132,6 +90,18 @@
 			height: auto;
 		}
 
+		.color-overlay {
+			position: absolute;
+			inset: 0;
+			z-index: 2;
+			background-color: var(--paletteColor, var(--black));
+			opacity: 1;
+			transition: var(--transition);
+			pointer-events: none;
+
+			&.loaded { opacity: 0; }
+		}
+
 		&.homepage {
 			img, video {
 				width: 100%;
@@ -139,32 +109,40 @@
 				object-fit: cover;
 			}
 
-			&.portrait {
+			&[data-orientation='portrait'] {
 				height: 100vh;
 				aspect-ratio: 2/3;
 				max-width: 100vw;
 			}
 
-			&.landscape {
+			&[data-orientation='landscape'] {
 				width: 100vh;
 				aspect-ratio: 3/2;
 				max-height: 100vh;
 			}
 
-			&.square {
+			&[data-orientation='wide'] {
+				width: 100vh;
+				aspect-ratio: 16/9;
+				max-height: 100vh;
+			}
+
+			&[data-orientation='square'] {
 				height: 100vh;
 				aspect-ratio: 1;
 				max-width: 100vw;
 			}
 
 			@media (orientation: portrait) {
-				&.portrait,
-				&.landscape,
-				&.square {
+				&[data-orientation='portrait'],
+				&[data-orientation='landscape'],
+				&[data-orientation='wide'],
+				&[data-orientation='square'] {
 					width: 100%;
 					height: auto;
 					max-width: unset;
 					max-height: unset;
+					aspect-ratio: unset;
 				}
 			}
 		}
@@ -184,10 +162,29 @@
 			img, video {
 				width: 100%;
 				height: auto;
-				max-height: 90vh;
-				object-fit: contain;
-				object-position: left;
+				max-height: calc(100vh - var(--headerHeight) - var(--sp-12));
+				object-fit: cover;
+				object-position: var(--objectPosition, left);
 				display: block;
+			}
+
+			&.contain {
+				aspect-ratio: var(--aspectRatio);
+				width: auto;
+				max-height: calc(100vh - var(--headerHeight) - var(--sp-12));
+
+				&.relative {
+					height: calc(100vh - var(--headerHeight) - var(--sp-12));
+					max-height: unset;
+				}
+
+				img, video {
+					height: 100%;
+					object-fit: contain;
+				}
+
+				&.object-center { margin: auto; }
+				&.object-right { margin-left: auto; }
 			}
 		}
 
@@ -208,14 +205,14 @@
 		}
 
 		&.preview {
-			width: 70%;
-			height: 60%;
+			aspect-ratio: var(--aspectRatio);
+			max-width: 70%;
+			max-height: 60%;
 
 			img, video {
 				width: 100%;
 				height: 100%;
-				object-fit: contain;
-				object-position: center;
+				object-fit: cover;
 			}
 		}
 	}

@@ -21,6 +21,7 @@ export const mediaBlock = {
 			name: 'items',
 			type: 'array',
 			of: [{type: 'object', fields: mediaFields}],
+			options: {layout: 'grid'},
 			validation: Rule => Rule.required().min(1).max(2),
 		},
 		{
@@ -40,7 +41,7 @@ export const mediaBlock = {
 			name: 'alignment',
 			type: 'string',
 			options: {
-				list: ['left', 'right'],
+				list: ['left', 'center', 'right'],
 				layout: 'radio',
 			},
 			initialValue: 'left',
@@ -49,6 +50,7 @@ export const mediaBlock = {
 		{
 			name: 'caption',
 			type: 'text',
+			rows: 3,
 			hidden: ({parent}) => parent?.width === 'full',
 		},
 	],
@@ -69,7 +71,32 @@ export const textBlock = {
 	title: 'Text',
 	icon: TextIcon,
 	type: 'object',
-	fields: [wysiwyg('text')],
+	fields: [
+		wysiwyg('text'),
+		{
+			name: 'width',
+			type: 'string',
+			options: {
+				list: [
+					{title: 'Fullscreen', value: 'full'},
+					{title: '3/4', value: 'three-quarters'},
+					{title: '1/2', value: 'half'},
+				],
+				layout: 'radio',
+			},
+			initialValue: 'full',
+		},
+		{
+			name: 'alignment',
+			type: 'string',
+			options: {
+				list: ['left', 'center', 'right'],
+				layout: 'radio',
+			},
+			initialValue: 'left',
+			hidden: ({parent}) => parent?.width === 'full',
+		},
+	],
 	preview: {
 		select: {text: 'text'},
 		prepare({text}) {
@@ -81,7 +108,6 @@ export const textBlock = {
 
 export const workReferenceBlock = {
 	name: 'workReference',
-	title: 'Work Reference',
 	icon: LinkIcon,
 	type: 'object',
 	fields: [
@@ -93,7 +119,6 @@ export const workReferenceBlock = {
 		},
 		{
 			name: 'marginBottom',
-			title: 'Margin bottom',
 			type: 'boolean',
 			initialValue: false,
 		},

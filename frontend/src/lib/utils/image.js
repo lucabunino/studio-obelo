@@ -18,6 +18,7 @@ export function getOrientation(media) {
 	const dims = media?.image?.asset?.metadata?.dimensions
 		?? media?.videoPoster?.asset?.metadata?.dimensions
 	if (!dims) return 'landscape'
+	if (dims.width / dims.height > 3 / 2) return 'wide'
 	if (dims.width > dims.height) return 'landscape'
 	if (dims.width === dims.height) return 'square'
 	return 'portrait'

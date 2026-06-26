@@ -12,15 +12,17 @@ export const client = createClient({
 const media = `
 	type,
 	columns,
+	contain,
+	objectAlignment,
 	type == "image" => {
-		image { asset->{ _id, altText, title, description, metadata { dimensions, lqip } } },
-		imageMobile { asset->{ _id, altText, title, description, metadata { dimensions, lqip } } },
+		image { asset->{ _id, altText, title, description, metadata { dimensions, palette { dominant { background } } } } },
+		imageMobile { asset->{ _id, altText, title, description, metadata { dimensions, palette { dominant { background } } } } },
 	},
 	type == "video" => {
 		video { asset->{ url, mimeType, size } },
 		videoMobile { asset->{ url, mimeType, size } },
-		videoPoster { asset->{ _id, altText, title, description, metadata { dimensions, lqip } } },
-		videoPosterMobile { asset->{ _id, altText, title, description, metadata { dimensions, lqip } } },
+		videoPoster { asset->{ _id, altText, title, description, metadata { dimensions, palette { dominant { background } } } } },
+		videoPosterMobile { asset->{ _id, altText, title, description, metadata { dimensions, palette { dominant { background } } } } },
 	}
 `
 
@@ -97,6 +99,8 @@ export async function getWork(slug) {
 			},
 			_type == "textBlock" => {
 				text,
+				width,
+				alignment,
 			},
 			_type == "workReference" => {
 				"work": work->{ title, "slug": slug.current, ongoing, startDate, endDate, services[]->{ title } },

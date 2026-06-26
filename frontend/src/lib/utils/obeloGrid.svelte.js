@@ -122,9 +122,10 @@ export function obeloGrid(node, params = {}) {
 				velocityY += (lastTouchY - e.touches[0].clientY) * scrollFactor
 				lastTouchY = e.touches[0].clientY
 			}
+			const initialSeq = swiperStep.seq
 			$effect(() => {
 				const { seq, direction } = swiperStep
-				if (seq > 0) targetX += (direction === 'next' ? 1 : -1) * colWidth
+				if (seq > initialSeq) targetX += (direction === 'next' ? 1 : -1) * colWidth
 			})
 
 			function tick() {
