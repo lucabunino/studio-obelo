@@ -84,12 +84,12 @@
 			<div class="content">
 				<div class="top">
 					<nav id="sorters" role="group" aria-label="Sorters">
-						<button class="sorter title"
+						<button class="sorter uppercase title"
 							aria-pressed={sort?.startsWith('title')}
 							aria-label="Sort by title{sort === 'title-asc' ? ', ascending' : sort === 'title-desc' ? ', descending' : ''}"
 							onclick={() => setSort('title')}
 						>Title<span class="arrow">{sort === 'title-asc' ? ' ▲' : sort === 'title-desc' ? ' ▼' : ''}</span></button>
-						<button class="sorter year"
+						<button class="sorter uppercase year"
 							aria-pressed={sort?.startsWith('year')}
 							aria-label="Sort by year{sort === 'year-desc' ? ', descending' : sort === 'year-asc' ? ', ascending' : ''}"
 							onclick={() => setSort('year')}
@@ -135,10 +135,10 @@
 				out:typewriter|global={{ duration: DURATION, clean: true }}
 				>
 					<nav id="filters" aria-labelledby="filters-label">
-						<div class="titles">
+						<div class="titles uppercase">
 							<h2 id="filters-label">Filters</h2>
 							{#if activeFilters.length > 0}
-								<button use:obelo class="clear" onclick={() => syncFiltersToUrl([])}>× Clear all filters</button>
+								<button use:obelo class="clear" onclick={() => syncFiltersToUrl([])}>× Clear all</button>
 							{/if}
 						</div>
 						<div class="filters">
@@ -326,7 +326,7 @@
 			position: fixed;
 			top: 0;
 			bottom: 0;
-			left: max(calc(var(--infoWidth) + 6 * var(--menuColWidth)), calc(var(--infoWidth) + (100vw - var(--infoWidth)) * 6 / 15));
+			left: calc(var(--infoWidth) + var(--overlayWidth));
 			right: 0;
 			display: flex;
 			justify-content: center;

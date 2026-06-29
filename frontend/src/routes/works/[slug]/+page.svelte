@@ -28,7 +28,7 @@
 		work.slug.current
 		loaded = false
 		resetTypewriter()
-		const t = setTimeout(() => { loaded = true }, DURATION * 2)
+		const t = setTimeout(() => { loaded = true }, DURATION*2)
 		return () => { clearTimeout(t); loaded = false }
 	})
 
@@ -134,8 +134,7 @@
 			<div class="blocks" role="list">
 				{#each work.blocks ?? [] as block, i (block._key)}
 					{#if block._type === 'mediaBlock'}
-						<div class="block media-block {block.alignment} {blockMode}" class:first={i === 0} role="listitem" style:z-index={zIndexes[i]}
-						in:fade|global={{ delay: DURATION + 100 + i * 100, duration: FADE_DURATION }} out:fade|global={{ duration: FADE_DURATION }}>
+						<div class="block media-block {block.alignment} {blockMode}" class:first={i === 0} role="listitem" style:z-index={zIndexes[i]}>
 							<div class="media-items" class:three-quarters={block.width === 'three-quarters'} class:half={block.width === 'half'}>
 								{#each block.items ?? [] as item}
 									<div class="media-item">
@@ -155,8 +154,7 @@
 							{#if block.text}
 								<div class="text portableText"
 									class:three-quarters={block.width === 'three-quarters'}
-									class:half={block.width === 'half'}
-									in:typewriter|global={{ delay: DURATION + 200 + i * 100 }}>
+									class:half={block.width === 'half'}>
 									<PortableText value={block.text} components={{ block: PortableTextStyle, marks: { link: PortableTextStyle } }} />
 								</div>
 							{/if}
@@ -166,8 +164,7 @@
 						<div class="block reference-block {blockMode}" class:first={i === 0} class:marginBottom={block.marginBottom} role="listitem" style:z-index={zIndexes[i]}>
 							<a class="link no-m glass-1" href="/works/{block.work.slug}"
 							onmouseenter={() => hoveredRef = block.work}
-							onmouseleave={() => hoveredRef = null}
-							in:fade|global={{ delay: DURATION + 200 + i * 100, duration: FADE_DURATION }}>
+							onmouseleave={() => hoveredRef = null}>
 								<span>Visit project:</span>
 								<span>{block.work.title}</span>
 							</a>

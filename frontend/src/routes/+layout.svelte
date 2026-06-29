@@ -154,7 +154,7 @@
 			left: var(--infoWidth);
 			top: 0;
 			bottom: 0;
-			width: max(calc(6 * var(--menuColWidth)), calc((100vw - var(--infoWidth)) * 6 / 15));
+			width: var(--overlayWidth);
 			overflow: hidden;
 			pointer-events: all;
 

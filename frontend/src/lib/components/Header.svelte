@@ -44,7 +44,7 @@
 		height: var(--headerHeight);
 		z-index: 8;
 		display: grid;
-		grid-template-columns: var(--infoWidth) repeat(6, minmax(var(--menuColWidth), 1fr)) repeat(9, 1fr);
+		grid-template-columns: var(--infoWidth) var(--overlayWidth) repeat(9, 1fr);
 		pointer-events: none;
 
 		a {
@@ -58,7 +58,7 @@
 		}
 
 		.menu {
-			grid-column: 2 / span 6;
+			grid-column: 2;
 			padding: 0 var(--sp-12);
 			display: grid;
 			grid-template-columns: repeat(3, 1fr);
