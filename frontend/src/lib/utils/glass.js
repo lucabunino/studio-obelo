@@ -4,6 +4,7 @@ class FxFilter {
     static filterOptions = new Map();
     static running = false;
     static observedElements = new Set();
+    static rectCache = new WeakMap();
     static supportsSvgBackdrop = typeof CSS !== 'undefined' && CSS.supports('backdrop-filter', 'url(#test)');
 
     static add(options) {
@@ -55,8 +56,17 @@ class FxFilter {
     }
 
     static scanElements() {
-        document.querySelectorAll('.glass-1, .glass-2').forEach(element => {
-            const fxFilter = this.getFxFilterValue(element);
+        const elements = [...document.querySelectorAll('.glass-1, .glass-2')];
+
+        // Phase 1: batch all layout/style reads before any DOM mutations
+        const snapshots = elements.map(el => {
+            const cs = getComputedStyle(el);
+            return { el, fxFilter: cs.getPropertyValue('--fx-filter').trim() || null, cs, width: el.offsetWidth, height: el.offsetHeight };
+        });
+
+        // Phase 2: process and mutate DOM
+        snapshots.forEach(({ el: element, fxFilter, cs, width, height }) => {
+            this.rectCache.set(element, { width, height, borderRadius: cs.borderRadius });
             const storedState = this.elements.get(element);
 
             if (fxFilter) {
@@ -67,7 +77,7 @@ class FxFilter {
                     parsedFilter = this.parseFilterValue(fxFilter);
                 }
 
-                const currentStyles = this.getTrackedStyles(element, fxFilter, parsedFilter);
+                const currentStyles = this.getTrackedStyles(element, fxFilter, parsedFilter, cs);
 
                 if (!storedState) {
                     this.addFxContainer(element, fxFilter, parsedFilter);
@@ -158,14 +168,14 @@ class FxFilter {
         return { orderedFilters, customFilters };
     }
 
-    static getTrackedStyles(element, filterValue, parsedFilter) {
+    static getTrackedStyles(element, filterValue, parsedFilter, cs) {
         const { customFilters } = parsedFilter || this.parseFilterValue(filterValue);
         const trackedStyles = new Map();
+        const computed = cs || getComputedStyle(element);
 
         customFilters.forEach(filter => {
             const filterOptions = this.filterOptions.get(filter.name);
             if (filterOptions?.updatesOn) {
-                const computed = getComputedStyle(element);
                 filterOptions.updatesOn.forEach(prop => trackedStyles.set(prop, computed.getPropertyValue(prop)));
             }
         });
@@ -217,17 +227,18 @@ FxFilter.add({
 FxFilter.add({
     name: 'liquid-glass',
     callback: (element, refraction = 1, offset = 10, chromatic = 0) => {
-        const width = Math.round(element.offsetWidth);
-        const height = Math.round(element.offsetHeight);
+        const rect = FxFilter.rectCache.get(element) || {};
+        const width = Math.round(rect.width ?? element.offsetWidth);
+        const height = Math.round(rect.height ?? element.offsetHeight);
         const refractionValue = parseFloat(refraction) / 2 || 0;
         const offsetValue = (parseFloat(offset) || 0) / 2;
         const chromaticValue = parseFloat(chromatic) || 0;
-        const borderRadiusStr = window.getComputedStyle(element).borderRadius || '0';
+        const borderRadiusStr = rect.borderRadius ?? window.getComputedStyle(element).borderRadius ?? '0';
         let borderRadius = borderRadiusStr.includes('%')
             ? (parseFloat(borderRadiusStr) / 100) * Math.min(width, height)
             : parseFloat(borderRadiusStr);
 
-        const SCALE = 4;
+        const SCALE = 8;
         const mapSize = Math.ceil(Math.max(width, height) / SCALE);
 
         function createDisplacementMap(refractionMod) {

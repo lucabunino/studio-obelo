@@ -168,6 +168,12 @@
 				display: block;
 			}
 
+			&.relative {
+				img, video {
+					max-height: unset;
+				}
+			}
+
 			&.contain {
 				aspect-ratio: var(--aspectRatio);
 				width: auto;
