@@ -310,6 +310,7 @@
 				&.sticky {
 					top: 0;
 					position: sticky;
+					padding-bottom: var(--sp-150);
 				}
 				&.relative {
 					position: relative;
