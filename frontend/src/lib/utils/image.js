@@ -28,6 +28,15 @@ const RATIOS = [
 	{ key: '_9x21', value: 9/21 },
 ]
 
+export function getOrientation(media) {
+	const dims = media?.image?.asset?.metadata?.dimensions
+		?? media?.videoPoster?.asset?.metadata?.dimensions
+	if (!dims) return 'landscape'
+	if (dims.width > dims.height) return 'landscape'
+	if (dims.width === dims.height) return 'square'
+	return 'portrait'
+}
+
 export function getAspectRatioClass(media) {
 	const dims = media?.image?.asset?.metadata?.dimensions
 		?? media?.videoPoster?.asset?.metadata?.dimensions
