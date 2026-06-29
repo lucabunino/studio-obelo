@@ -1,10 +1,10 @@
 <script>
-	import { urlFor, buildSrcset, getOrientation } from '$lib/utils/image.js'
+	import { urlFor, buildSrcset, getAspectRatioClass } from '$lib/utils/image.js'
 	import bp from '$lib/scss/breakpoints.module.scss'
 
 	let { media, class: className = '', sizes = '100vw' } = $props()
 
-	const orientation = $derived(getOrientation(media))
+	const ratioClass = $derived(getAspectRatioClass(media))
 	const aspectRatio = $derived(media.type === 'image' ? media.image?.asset?.metadata?.dimensions?.aspectRatio : media.videoPoster?.asset?.metadata?.dimensions?.aspectRatio )
 
 	const paletteColor = $derived(
@@ -29,7 +29,7 @@
 	class:contain={media.contain}
 	class:object-center={media.contain && media.objectAlignment === 'center'}
 	class:object-right={media.contain && media.objectAlignment === 'right'}
-	data-orientation={orientation}
+	data-aspect-ratio={ratioClass}
 	style:--aspectRatio={aspectRatio}
 	style:--paletteColor={paletteColor ?? 'var(--black)'}
 	style:--objectPosition={media.objectAlignment ?? 'left'}
@@ -109,35 +109,20 @@
 				object-fit: cover;
 			}
 
-			&[data-orientation='portrait'] {
-				height: 100vh;
-				aspect-ratio: 2/3;
-				max-width: 100vw;
-			}
-
-			&[data-orientation='landscape'] {
-				width: 100vh;
-				aspect-ratio: 3/2;
-				max-height: 100vh;
-			}
-
-			&[data-orientation='wide'] {
-				width: 100vh;
-				aspect-ratio: 16/9;
-				max-height: 100vh;
-			}
-
-			&[data-orientation='square'] {
-				height: 100vh;
-				aspect-ratio: 1;
-				max-width: 100vw;
-			}
+			&[data-aspect-ratio='_21x9'] { width: 100vh; aspect-ratio: 21/9; max-height: 100vh; }
+			&[data-aspect-ratio='_8x5']  { width: 100vh; aspect-ratio: 8/5;  max-height: 100vh; }
+			&[data-aspect-ratio='_3x2']  { width: 100vh; aspect-ratio: 3/2;  max-height: 100vh; }
+			&[data-aspect-ratio='_4x3']  { width: 100vh; aspect-ratio: 4/3;  max-height: 100vh; }
+			&[data-aspect-ratio='_5x4']  { width: 100vh; aspect-ratio: 5/4;  max-height: 100vh; }
+			&[data-aspect-ratio='_1x1']  { width: 100vh; aspect-ratio: 1;    max-height: 100vh; }
+			&[data-aspect-ratio='_4x5']  { height: 100vh; aspect-ratio: 4/5;  max-width: 100vw; }
+			&[data-aspect-ratio='_3x4']  { height: 100vh; aspect-ratio: 3/4;  max-width: 100vw; }
+			&[data-aspect-ratio='_2x3']  { height: 100vh; aspect-ratio: 2/3;  max-width: 100vw; }
+			&[data-aspect-ratio='_5x8']  { height: 100vh; aspect-ratio: 5/8;  max-width: 100vw; }
+			&[data-aspect-ratio='_9x21'] { height: 100vh; aspect-ratio: 9/21; max-width: 100vw; }
 
 			@media (orientation: portrait) {
-				&[data-orientation='portrait'],
-				&[data-orientation='landscape'],
-				&[data-orientation='wide'],
-				&[data-orientation='square'] {
+				&[data-aspect-ratio] {
 					width: 100%;
 					height: auto;
 					max-width: unset;
@@ -205,10 +190,11 @@
 			&.contain {
 				aspect-ratio: var(--aspectRatio);
 				width: auto;
+				height: calc((100vw - var(--infoWidth))/8*5);
 				max-height: calc(100vh - var(--headerHeight) - var(--sp-12));
 
 				&.relative {
-					height: calc(100vh - var(--headerHeight) - var(--sp-12));
+					height: calc((100vw - var(--infoWidth))/8*5);
 					max-height: unset;
 				}
 
