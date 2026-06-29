@@ -6,10 +6,8 @@
 	import { obelo } from '$lib/utils/obelo'
 	import { obeloGrid } from '$lib/utils/obeloGrid.svelte.js'
     import { resetTypewriter, typewriter } from '$lib/utils/typewriter.js';
-    import { onMount } from 'svelte';
 	import { fade } from 'svelte/transition'
 	import timing from '$lib/scss/timing.module.scss'
-    import { innerHeight, innerWidth } from 'svelte/reactivity/window';
 	const DURATION = parseInt(timing.overlayDuration)
 	const FADE_DURATION = parseInt(timing.fadeDuration)
 

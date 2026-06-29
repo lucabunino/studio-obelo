@@ -25,7 +25,7 @@
 
 	--headerHeight: 4rem;
 	--footerHeight: 4rem;
-	--infoWidth: 250px;
+	--infoWidth: 350px;
 	--menuColWidth: 80px;
 	--transition: cubic-bezier(.77, 0, .175, 1) var(--transitionDuration);
 	--transition-s: cubic-bezier(.77, 0, .175, 1) var(--fadeDuration);
@@ -94,7 +94,8 @@ main {
 .glass-1 {
 	-webkit-backdrop-filter: blur(10px) saturate(1.2);
     transform: translateZ(0);
-	--fx-filter: blur(10px) liquid-glass(2, 10, 1) saturate(1.25) color-overlay(white,.2) noise(.3, 1, .03);
+	// --fx-filter: blur(10px) liquid-glass(2, 10, 1) saturate(1.25) color-overlay(white,.2) noise(.3, 1, .03);
+	--fx-filter: blur(10px) liquid-glass(2, 10, 1) saturate(1.25) color-overlay(white,.2);
 	// position: relative;
 	overflow: hidden;
 	background: rgba(245, 245, 245, 0.15);
@@ -114,7 +115,8 @@ main {
 .glass-2 {
 	-webkit-backdrop-filter: blur(10px) saturate(1.2);
     transform: translateZ(0);
-	--fx-filter: blur(10px) liquid-glass(2, 100, 1) saturate(1.2) color-overlay(white,.05) noise(.3, 1, .03);
+	// --fx-filter: blur(10px) liquid-glass(2, 100, 1) saturate(1.2) color-overlay(white,.05) noise(.3, 1, .03);
+	--fx-filter: blur(10px) liquid-glass(2, 100, 1) saturate(1.2) color-overlay(white,.05);
 	// position: relative;
 	overflow: hidden;
 	background: rgba(245, 245, 245, 0.15);

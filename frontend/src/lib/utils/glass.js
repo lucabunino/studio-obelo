@@ -3,6 +3,7 @@ class FxFilter {
     static filters = new Map();
     static filterOptions = new Map();
     static running = false;
+    static observedElements = new Set();
     static supportsSvgBackdrop = typeof CSS !== 'undefined' && CSS.supports('backdrop-filter', 'url(#test)');
 
     static add(options) {
@@ -28,18 +29,33 @@ class FxFilter {
         this.running = true;
 
         requestAnimationFrame(() => {
+            this.ro = new ResizeObserver(() => this.scanElements());
             this.scanElements();
 
-            this.ro = new ResizeObserver(() => this.scanElements());
-            this.ro.observe(document.documentElement);
-
-            this.mo = new MutationObserver(() => this.scanElements());
-            this.mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
+            this.mo = new MutationObserver((mutations) => {
+                const relevant = mutations.some(m =>
+                    [...m.addedNodes, ...m.removedNodes].some(n =>
+                        n.nodeType === 1 && (n.matches?.('.glass-1,.glass-2') || n.querySelector?.('.glass-1,.glass-2'))
+                    )
+                )
+                if (relevant) this.scanElements()
+            });
+            this.mo.observe(document.body, { childList: true, subtree: true });
         });
     }
 
+    static syncResizeObserver() {
+        const current = new Set(document.querySelectorAll('.glass-1, .glass-2'));
+        for (const el of current) {
+            if (!this.observedElements.has(el)) { this.ro.observe(el); this.observedElements.add(el); }
+        }
+        for (const el of this.observedElements) {
+            if (!current.has(el)) { this.ro.unobserve(el); this.observedElements.delete(el); }
+        }
+    }
+
     static scanElements() {
-        document.querySelectorAll('*:not(.fx-container):not(svg)').forEach(element => {
+        document.querySelectorAll('.glass-1, .glass-2').forEach(element => {
             const fxFilter = this.getFxFilterValue(element);
             const storedState = this.elements.get(element);
 
@@ -68,6 +84,7 @@ class FxFilter {
                 }
             }
         });
+        this.syncResizeObserver();
     }
 
     static getFxFilterValue(element) {
@@ -210,46 +227,57 @@ FxFilter.add({
             ? (parseFloat(borderRadiusStr) / 100) * Math.min(width, height)
             : parseFloat(borderRadiusStr);
 
-        const maxDimension = Math.ceil(Math.max(width, height));
+        const SCALE = 4;
+        const mapSize = Math.ceil(Math.max(width, height) / SCALE);
 
         function createDisplacementMap(refractionMod) {
             const r = refractionValue + refractionMod;
-            const imageData = new ImageData(maxDimension, maxDimension);
+            const imageData = new ImageData(mapSize, mapSize);
             const data = imageData.data;
             for (let i = 0; i < data.length; i += 4) { data[i] = 127; data[i+1] = 127; data[i+2] = 127; data[i+3] = 255; }
 
-            const half = Math.floor(maxDimension / 2);
+            const half = Math.floor(mapSize / 2);
             for (let y = 0; y < half; y++) {
                 const g = (half - y) / half;
-                for (let x = 0; x < maxDimension; x++) {
-                    data[(y * maxDimension + x) * 4 + 2] = Math.max(0, Math.min(255, Math.round(127 + 127 * r * g)));
+                for (let x = 0; x < mapSize; x++) {
+                    data[(y * mapSize + x) * 4 + 2] = Math.max(0, Math.min(255, Math.round(127 + 127 * r * g)));
                 }
             }
-            for (let y = maxDimension - half; y < maxDimension; y++) {
-                const g = (y - (maxDimension - half)) / half;
-                for (let x = 0; x < maxDimension; x++) {
-                    data[(y * maxDimension + x) * 4 + 2] = Math.max(0, Math.min(255, Math.round(127 - 127 * r * g)));
+            for (let y = mapSize - half; y < mapSize; y++) {
+                const g = (y - (mapSize - half)) / half;
+                for (let x = 0; x < mapSize; x++) {
+                    data[(y * mapSize + x) * 4 + 2] = Math.max(0, Math.min(255, Math.round(127 - 127 * r * g)));
                 }
             }
-            for (let y = 0; y < maxDimension; y++) {
+            for (let y = 0; y < mapSize; y++) {
                 for (let x = 0; x < half; x++) {
                     const g = (half - x) / half;
-                    data[(y * maxDimension + x) * 4] = Math.max(0, Math.min(255, Math.round(127 + 127 * r * g)));
+                    data[(y * mapSize + x) * 4] = Math.max(0, Math.min(255, Math.round(127 + 127 * r * g)));
                 }
-                for (let x = maxDimension - half; x < maxDimension; x++) {
-                    const g = (x - (maxDimension - half)) / half;
-                    data[(y * maxDimension + x) * 4] = Math.max(0, Math.min(255, Math.round(127 - 127 * r * g)));
+                for (let x = mapSize - half; x < mapSize; x++) {
+                    const g = (x - (mapSize - half)) / half;
+                    data[(y * mapSize + x) * 4] = Math.max(0, Math.min(255, Math.round(127 - 127 * r * g)));
                 }
             }
             return imageData;
         }
 
         function createCanvasFromImageData(imageData) {
+            const small = document.createElement('canvas');
+            small.width = mapSize;
+            small.height = mapSize;
+            small.getContext('2d').putImageData(imageData, 0, 0);
+
+            const scaledMax = mapSize * SCALE;
             const canvas = document.createElement('canvas');
             canvas.width = width;
             canvas.height = height;
             const ctx = canvas.getContext('2d');
-            ctx.putImageData(imageData, -Math.round((maxDimension - width) / 2), -Math.round((maxDimension - height) / 2));
+            ctx.imageSmoothingEnabled = true;
+            ctx.drawImage(small, 0, 0, mapSize, mapSize,
+                -Math.round((scaledMax - width) / 2), -Math.round((scaledMax - height) / 2),
+                scaledMax, scaledMax);
+            small.remove();
 
             if (borderRadius > 0) {
                 const mask = new OffscreenCanvas(width, height);
