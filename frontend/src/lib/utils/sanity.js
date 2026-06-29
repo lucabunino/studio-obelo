@@ -159,7 +159,7 @@ export async function getEducations() {
 export async function getHomepage() {
 	return client.fetch(`{
 		"homepage": *[_type == "homepage" && !(_id in path('drafts.**'))][0] {
-			projects[]->{ _id, title, slug, startDate, endDate, ongoing, services[]->{ title }, thumbnail { ${media} } },
+			projects[]->{ _id, title, slug, startDate, endDate, ongoing, services[]->{ title }, homepage { ${media} } },
 			separator
 		},
 		"about": *[_type == "about" && !(_id in path('drafts.**'))][0] {

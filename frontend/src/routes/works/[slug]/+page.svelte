@@ -24,6 +24,7 @@
 	let hoveredNavArrow = $state(null)
 	let hoveredRef = $state(null)
 	let relatedBlockEl = $state()
+	let blockMode = $state('sticky')
 
 	$effect(() => {
 		work.slug.current
@@ -73,6 +74,10 @@
 	})
 
 </script>
+
+<svelte:window onkeydown={(e) => {
+	if (e.key === 'S' && e.shiftKey) blockMode = blockMode === 'sticky' ? 'relative' : 'sticky'
+}} />
 
 {#if loaded}
 	{#key work.slug.current}
@@ -131,7 +136,6 @@
 			<div class="blocks" role="list">
 				{#each work.blocks ?? [] as block, i (block._key)}
 					{#if block._type === 'mediaBlock'}
-						{@const blockMode = ((innerWidth.current ?? 0) - 250)/(innerHeight.current ?? 1) < 8/5 ? 'sticky' : 'relative'}
 						<div class="block media-block {block.alignment} {blockMode}" class:first={i === 0} role="listitem" style:z-index={zIndexes[i]} in:fade|global={{ delay: DURATION + 100 + i * 100, duration: FADE_DURATION }} out:fade|global={{ duration: FADE_DURATION }}>
 							<div class="media-items" class:three-quarters={block.width === 'three-quarters'} class:half={block.width === 'half'}>
 								{#each block.items ?? [] as item}
@@ -148,7 +152,7 @@
 						</div>
 
 					{:else if block._type === 'textBlock'}
-						<div class="block text-block no-m {block.alignment} {(innerWidth.current - 250)/innerHeight.current < 8/5 ? 'sticky' : 'relative'}" class:first={i === 0} role="listitem" style:z-index={zIndexes[i]}>
+						<div class="block text-block no-m {block.alignment} {blockMode}" class:first={i === 0} role="listitem" style:z-index={zIndexes[i]}>
 							{#if block.text}
 								<div class="text portableText"
 									class:three-quarters={block.width === 'three-quarters'}
@@ -160,7 +164,7 @@
 						</div>
 
 					{:else if block._type === 'workReference' && block.work}
-						<div class="block reference-block {(innerWidth.current - 250)/innerHeight.current < 8/5 ? 'sticky' : 'relative'}" class:first={i === 0} class:marginBottom={block.marginBottom} role="listitem" style:z-index={zIndexes[i]}>
+						<div class="block reference-block {blockMode}" class:first={i === 0} class:marginBottom={block.marginBottom} role="listitem" style:z-index={zIndexes[i]}>
 							<a class="link no-m glass-1" href="/works/{block.work.slug}"
 							onmouseenter={() => hoveredRef = block.work}
 							onmouseleave={() => hoveredRef = null}>

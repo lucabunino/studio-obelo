@@ -20,7 +20,25 @@ export const mediaBlock = {
 		{
 			name: 'items',
 			type: 'array',
-			of: [{type: 'object', fields: mediaFields}],
+			of: [{type: 'object', fields: [
+				...mediaFields,
+				{
+					name: 'contain',
+					type: 'boolean',
+					initialValue: false,
+				},
+				{
+					name: 'objectAlignment',
+					title: 'Object position',
+					type: 'string',
+					options: {
+						list: ['left', 'center', 'right'],
+						layout: 'radio',
+					},
+					initialValue: 'left',
+					hidden: ({parent}) => !parent?.contain,
+				},
+			]}],
 			options: {layout: 'grid'},
 			validation: Rule => Rule.required().min(1).max(2),
 		},

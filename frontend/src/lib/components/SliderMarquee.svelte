@@ -171,7 +171,13 @@
 							in:fly={{ delay: DURATION + i*DURATION/4, duration: DURATION, x: '20vw' }}
 							out:fade|global={{ duration: FADE_DURATION }}
 						>
-							<Media media={work.thumbnail} class="homepage" />
+							{#if work.homepage}
+								<Media media={work.homepage} class="homepage" />
+							{:else}
+								<div class="missing-homepage" aria-label="Missing homepage asset">
+									<span>missing homepage asset</span>
+								</div>
+							{/if}
 						</a>
 					{/if}
 				{/each}
@@ -233,5 +239,21 @@
 
 	.work {
 		flex-shrink: 0;
+	}
+
+	.missing-homepage {
+		width: 40vw;
+		height: 60vh;
+		background: var(--white);
+		opacity: .5;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+
+		span {
+			color: var(--black);
+			transform: rotate(-45deg);
+		}
 	}
 </style>

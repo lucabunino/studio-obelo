@@ -52,22 +52,6 @@ export const mediaFields = [
 		type: 'image',
 		hidden: ({parent}) => parent?.type !== 'video',
 	},
-	{
-		name: 'contain',
-		type: 'boolean',
-		initialValue: false,
-	},
-	{
-		name: 'objectAlignment',
-		title: 'Object position',
-		type: 'string',
-		options: {
-			list: ['left', 'center', 'right'],
-			layout: 'radio',
-		},
-		initialValue: 'left',
-		hidden: ({parent}) => !parent?.contain,
-	},
 ]
 
 export function media(name) {
