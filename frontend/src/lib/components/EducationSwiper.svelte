@@ -108,7 +108,7 @@
 <svelte:window onkeydown={(e) => { if (e.key === 'Escape' && !page.state.overlay) closeSwiper() }} />
 
 {#if activeSlide?.title}
-	<h1 class="edu-title">{activeSlide.title}</h1>
+	<h1 class="title">{activeSlide.title}</h1>
 {/if}
 
 {#if !page.state.overlay}
@@ -145,11 +145,11 @@
 </swiper-container>
 
 <style lang="scss">
-	.edu-title {
+	.title {
 		position: fixed;
 		top: var(--sp-12);
 		left: var(--sp-12);
-		z-index: 11;
+		z-index: 3;
 		pointer-events: none;
 	}
 

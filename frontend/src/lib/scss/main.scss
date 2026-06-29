@@ -19,10 +19,7 @@
 	--white-50: #8C8A8B;
 	--yellow: #FFFFCD;
 
-	@for $i from 1 through 200 {
-		--sp-#{$i}: #{calc($i / 13)}rem;
-	}
-
+	--fontSize: clamp(13px, calc(.8597883598vw), 16px);
 	--headerHeight: 4rem;
 	--footerHeight: 4rem;
 	--infoWidth: clamp(300px, 20vw, 400px);
@@ -35,11 +32,15 @@
 	--fadeDuration: #{timing.$fade-duration}ms;
 	--typewriterHold: #{timing.$typewriter-hold}ms;
 	--typewriterMinDuration: #{timing.$typewriter-min-duration}ms;
+
+	@for $i from 1 through 200 {
+		--sp-#{$i}: #{calc($i / 13)}rem;
+	}
 }
 
 html {
 	-webkit-font-smoothing: antialiased;
-	font-size: 13px;
+	font-size: var(--fontSize);
 	line-height: 1.2;
 	overscroll-behavior-x: none;
 	background-color: var(--black);
