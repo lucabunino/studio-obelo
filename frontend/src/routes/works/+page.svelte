@@ -158,7 +158,7 @@
 			<aside id="preview" aria-label="Work preview">
 				<div class="obelo-grid overlay glass-2" use:obeloGrid={{cols: 6, rows: 8, loop: true}}></div>
 				{#key activeWork._id}
-					<Media media={activeWork.thumbnail} class={'preview'}/>
+					<Media media={activeWork.thumbnail} class={'works'}/>
 				{/key}
 			</aside>
 		{/if}
@@ -203,9 +203,6 @@
 					.sorter {
 						color: var(--fgColor);
 						opacity: .5;
-						.arrow {
-							font-variant: unicase;
-						}
 						&:hover, &[aria-pressed=true] {
 							opacity: 1;
 						}

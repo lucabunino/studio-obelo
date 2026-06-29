@@ -138,7 +138,7 @@
 							<div class="media-items" class:three-quarters={block.width === 'three-quarters'} class:half={block.width === 'half'}>
 								{#each block.items ?? [] as item}
 									<div class="media-item">
-										<Media media={item} class="work {blockMode}" />
+										<Media media={item} class="single-work {blockMode}" />
 									</div>
 								{/each}
 							</div>
@@ -441,6 +441,7 @@
 
 								.thumb {
 									width: 30vw;
+									height: fit-content;
 									display: flex;
 									align-items: center;
 								}

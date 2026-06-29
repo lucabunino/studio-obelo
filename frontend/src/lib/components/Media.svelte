@@ -155,7 +155,35 @@
 			}
 		}
 
-		&.work {
+		&.single-education {
+			display: flex;
+			align-items: center;
+			height: 60vh;
+			max-height: 80vh;
+			width: auto;
+			max-width: 70vw;
+			aspect-ratio: var(--aspectRatio);
+
+			img, video {
+				height: 100%;
+				width: 100%;
+				object-fit: cover;
+			}
+		}
+
+		&.works {
+			aspect-ratio: var(--aspectRatio);
+			max-width: 70%;
+			max-height: 60%;
+
+			img, video {
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+			}
+		}
+
+		&.single-work {
 			width: 100%;
 			height: auto;
 
@@ -194,32 +222,11 @@
 			}
 		}
 
-		&.single-education {
-			display: flex;
-			align-items: center;
-			height: 60vh;
-			max-height: 80vh;
+		&.nav {
+			aspect-ratio: var(--aspectRatio);
 			width: auto;
-			max-width: 70vw;
-			aspect-ratio: var(--aspectRatio);
-
-			img, video {
-				height: 100%;
-				width: 100%;
-				object-fit: cover;
-			}
-		}
-
-		&.preview {
-			aspect-ratio: var(--aspectRatio);
-			max-width: 70%;
-			max-height: 60%;
-
-			img, video {
-				width: 100%;
-				height: 100%;
-				object-fit: cover;
-			}
+			height: 100%;
+			max-height: 60vh;
 		}
 	}
 </style>
