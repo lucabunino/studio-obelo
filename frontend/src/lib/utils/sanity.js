@@ -5,7 +5,8 @@ import { dev } from '$app/environment'
 export const client = createClient({
 	projectId: PUBLIC_SANITY_PROJECT_ID,
 	dataset: PUBLIC_SANITY_DATASET,
-	useCdn: !dev,
+	// useCdn: !dev,
+	useCdn: false,
 	apiVersion: '2025-01-01',
 })
 
