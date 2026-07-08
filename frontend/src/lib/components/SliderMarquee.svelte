@@ -29,6 +29,9 @@
 	const responsive = getResponsive()
 	const isPortrait = $derived(innerHeight.current > innerWidth.current)
 
+	let isMobileSnapshot = $state(responsive.isMobile)
+	$effect(() => { isMobileSnapshot = responsive.isMobile })
+
 	$effect(() => {
 		isPortrait
 		pos = 0
@@ -166,7 +169,7 @@
 							onmouseenter={() => hoveredWork = work}
 							onmouseleave={() => hoveredWork = null}
 							in:fly={{ delay: responsive.isMobile ? 0 : +timing.overlayDuration + i*+timing.overlayDuration/4, duration: +timing.overlayDuration, x: isPortrait ? undefined : '20vw', y: isPortrait ? '50vh' : undefined }}
-							out:fade={{ duration: responsive.isMobile ? 0 : +timing.fadeDuration }}
+							out:fade|global={{ duration: isMobileSnapshot ? 0 : +timing.fadeDuration }}
 						>
 							{#if work.homepage}
 								<Media media={work.homepage} class="homepage" sizes={(() => { const d = work.homepage?.image?.asset?.metadata?.dimensions ?? work.homepage?.videoPoster?.asset?.metadata?.dimensions; return !d || d.width >= d.height ? '(orientation: portrait) 100vw, 100vh' : `(orientation: portrait) 100vw, ${Math.round(d.width/d.height*100)}vh` })()} />

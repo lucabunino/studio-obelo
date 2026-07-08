@@ -213,7 +213,7 @@
 										aria-pressed={activeFilters.includes(filter.slug)}
 										onclick={() => toggleFilter(filter.slug)}
 										in:typewriter|global={{ delay: responsive.isMobile ? +timing.overlayDurationMobile :filteredWorks.length*STEP }}
-										out:typewriter={{ duration: responsive.isMobile ? +timing.overlayDurationMobile : +timing.overlayDuration/3, clean: true }}
+										out:typewriter|global={{ duration: isMobileSnapshot ? +timing.overlayDurationMobile : +timing.overlayDuration/3, clean: true }}
 									><span use:obelo>{filter.title}</span></button>
 								{/each}
 							</div>
