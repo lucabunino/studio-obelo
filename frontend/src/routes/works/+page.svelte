@@ -36,6 +36,9 @@
 	let bottomHeight = $state(0)
 	let sorterHeight = $state(0)
 
+	let isMobileSnapshot = $state(responsive.isMobile)
+	$effect(() => { isMobileSnapshot = responsive.isMobile })
+
 	$effect(() => {
 		if (responsive.isMobile) activeWork = filteredWorks.find(w => !w.inactive) ?? null
 		else activeWork = null
@@ -148,7 +151,7 @@
 									onmouseenter={() => { activeWork = work }}
 									onintroend={(e) => e.currentTarget.dataset.introDone = '1'}
 									in:typewriter|global={{ delay: responsive.isMobile ? +timing.overlayDurationMobile : (page.state.overlay ? i * STEP : 0) }}
-									out:typewriter|global={{ duration: responsive.isMobile ? (isSorting ? +timing.overlayDurationMobile : 0) : OUT_DURATION, clean: true }}
+									out:typewriter={{ duration: responsive.isMobile ? (isSorting ? OUT_DURATION : 0) : OUT_DURATION, clean: true }}
 									>
 										<a href="/works/{work.slug.current}">
 											<h2 class="title ellipsis" use:marquee use:obelo>{work.title}</h2>
@@ -210,7 +213,7 @@
 										aria-pressed={activeFilters.includes(filter.slug)}
 										onclick={() => toggleFilter(filter.slug)}
 										in:typewriter|global={{ delay: responsive.isMobile ? +timing.overlayDurationMobile :filteredWorks.length*STEP }}
-										out:typewriter|global={{ duration: responsive.isMobile ? +timing.overlayDurationMobile : +timing.overlayDuration/3, clean: true }}
+										out:typewriter={{ duration: responsive.isMobile ? +timing.overlayDurationMobile : +timing.overlayDuration/3, clean: true }}
 									><span use:obelo>{filter.title}</span></button>
 								{/each}
 							</div>

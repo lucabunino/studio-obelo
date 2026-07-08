@@ -22,11 +22,21 @@
 
 	let { data, children } = $props()
 	const nav = getPageInfo()
-	
+
+	function setBodyPage(node, pageName) {
+		node.dataset.page = pageName
+		return {
+			update(pageName) { node.dataset.page = pageName },
+			destroy() { delete node.dataset.page },
+		}
+	}
+
 	onMount(() => initGlass())
 </script>
 
 <Head />
+
+<svelte:body use:setBodyPage={nav.pageName} />
 
 {#if page.route.id?.startsWith('/education')}
 	<div class="obelo-grid" use:obeloGrid={{cols: 6, rows: 8, loop: true}}></div>
@@ -98,11 +108,11 @@ style:--infoTextHeight="{infoText.height + 24}px">
 		}
 	}
 
-	[data-page='home'],
-	[data-page='policy'],
-	[data-page='education'],
-	[data-page='singleWork'],
-	[data-page='singleEducation'], {
+	:global([data-page='home']),
+	:global([data-page='policy']),
+	:global([data-page='education']),
+	:global([data-page='singleWork']),
+	:global([data-page='singleEducation']) {
 		--bgColor: var(--black);
 		--fgColor: var(--white);
 
@@ -112,8 +122,8 @@ style:--infoTextHeight="{infoText.height + 24}px">
 			}
 		}
 	}
-	[data-page='about'],
-	[data-page='works'] {
+	:global([data-page='about']),
+	:global([data-page='works']) {
 		--bgColor: var(--white);
 		--fgColor: var(--black);
 		transition-delay: 0ms;

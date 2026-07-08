@@ -147,5 +147,25 @@
 				padding-left: 0;
 			}
 		}
+
+		@media (width <= #{bp.$xs}) {
+			margin: 0;
+			padding: 0 var(--sp-12);
+			column-gap: var(--sp-12);
+			align-items: baseline;
+
+			.logo {
+				margin: 0 15vw 0 0;
+			}
+			.menu {
+				display: contents;
+			}
+		}
+
+		@media (width <= #{bp.$xxs}) {
+			.logo {
+				margin: 0;
+			}
+		}
 	}
 </style>

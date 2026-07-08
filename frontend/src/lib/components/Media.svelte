@@ -20,15 +20,29 @@
 			: activePoster?.asset?.metadata?.palette?.dominant?.background
 	)
 
-	const desktopSrcset = $derived(media.type === 'image' ? buildSrcset(media.image) : '')
-	const mobileSrcset = $derived(media.type === 'image' && media.imageMobile ? buildSrcset(media.imageMobile) : '')
+	const hasValidAsset = $derived(
+		media.type === 'image'
+			? !!media.image?.asset?.metadata?.dimensions
+			: !!media.video?.asset?.url
+	)
+
+	function safely(fn) {
+		try { return fn() } catch { return null }
+	}
+
+	const imageSrc = $derived(hasValidAsset ? safely(() => urlFor(media.image).width(800).url()) : null)
+	const desktopSrcset = $derived(media.type === 'image' && hasValidAsset ? safely(() => buildSrcset(media.image)) : '')
+	const mobileSrcset = $derived(media.type === 'image' && hasValidAsset && media.imageMobile ? safely(() => buildSrcset(media.imageMobile)) : '')
+	const posterSrc = $derived(activePoster && hasValidAsset ? safely(() => urlFor(activePoster).width(800).url()) : undefined)
+
+	const mediaError = $derived(!hasValidAsset || (media.type === 'image' && !imageSrc))
 
 	let loaded = $state(false)
 	$effect(() => {
-		if (media.type !== 'video' || !activePoster) return
+		if (media.type !== 'video' || !posterSrc) return
 		const img = new Image()
 		img.onload = () => { loaded = true }
-		img.src = urlFor(activePoster).width(800).url()
+		img.src = posterSrc
 	})
 </script>
 
@@ -42,14 +56,18 @@
 	style:--paletteColor={paletteColor ?? 'var(--black)'}
 	style:--objectPosition={media.objectAlignment ?? 'left'}
 >
-	{#if media.type === 'image'}
+	{#if mediaError}
+		<div class="media-error">
+			<p>Media unavailable</p>
+		</div>
+	{:else if media.type === 'image'}
 		<picture>
 			{#if media.imageMobile}
 				<source media="(max-width: {parseInt(bp.md) - 1}px)" srcset={mobileSrcset} {sizes} />
 			{/if}
 			<img
 				srcset={desktopSrcset}
-				src={urlFor(media.image).width(800).url()}
+				src={imageSrc}
 				alt={media.image?.asset?.altText ?? ''}
 				{sizes}
 				loading="lazy"
@@ -59,7 +77,7 @@
 	{:else if media.type === 'video'}
 		<video
 			autoplay muted loop playsinline
-			poster={activePoster ? urlFor(activePoster).width(800).url() : undefined}
+			poster={posterSrc}
 		>
 			{#if media.videoMobile}
 				<source media="(max-width: {parseInt(bp.md) - 1}px)" src={media.videoMobile?.asset?.url} type="video/mp4" />
@@ -87,6 +105,18 @@
 		img:not(.lqip), video {
 			position: relative;
 			z-index: 1;
+		}
+
+		.media-error {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 100%;
+			aspect-ratio: var(--aspectRatio, 3/2);
+			background-color: var(--black);
+			color: var(--white);
+			text-align: center;
+			padding: var(--sp-6);
 		}
 
 		img, video {
@@ -131,7 +161,6 @@
 
 			@media (orientation: portrait) {
 				border-radius: var(--sp-2);
-				margin: var(--sp-1) var(--sp-6);
 
 				&[data-aspect-ratio] {
 					width: stretch;

@@ -51,6 +51,16 @@ html {
 	overscroll-behavior-x: none;
 	background-color: var(--black);
 	color: var(--white);
+
+	@media (orientation: portrait), (width <= #{bp.$md}) {
+		background-color: transparent;
+	}
+}
+
+body {
+	@media (orientation: portrait), (width <= #{bp.$md}) {
+		background-color: var(--bgColor, var(--black));
+	}
 }
 
 main {
@@ -173,16 +183,6 @@ main {
 
 [data-typing] *::after {
 	opacity: 0;
-}
-
-.portableText {
-	ul, ol {
-		padding-left: 1em;
-		margin: 0;
-	}
-	li {
-		margin: 0;
-	}
 }
 
 @keyframes marquee-scroll {

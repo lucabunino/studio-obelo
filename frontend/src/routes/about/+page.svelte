@@ -16,6 +16,9 @@
 	const about = $derived(data.about)
 	let loaded = $state(false)
 
+	let isMobileSnapshot = $state(false)
+	$effect(() => { isMobileSnapshot = responsive.isMobile })
+
 	$effect(() => {
 		const t = setTimeout(() => loaded = true, responsive.isMobile ? DURATION_MOBILE : DURATION)
 		return () => clearTimeout(t)
@@ -26,7 +29,7 @@
 	<main>
 		<h1 class="sr-only">About</h1>
 		<div class="content">
-			<div class="top" in:typewriter out:typewriter|global={{ duration: responsive.isMobile ? DURATION_MOBILE : DURATION, clean: true }}>
+			<div class="top" in:typewriter out:typewriter|global={{ duration: isMobileSnapshot ? DURATION_MOBILE : DURATION, clean: true }}>
 				{#if about?.description}
 					<section id="description" aria-label="Intro" class="portableText description">
 						<PortableText value={about.description} components={{ block: PortableTextStyle, types: { break: PortableTextStyle }, marks: { link: PortableTextStyle } }} />

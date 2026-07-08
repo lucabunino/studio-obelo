@@ -58,12 +58,10 @@ export function typewriter(node, { duration: fixedDuration, delay: fixedDelay, c
 	const links = Array.from(node.querySelectorAll('a'))
 	const liItems = Array.from(node.querySelectorAll('li'))
 	links.forEach(a => a.style.textDecorationColor = 'transparent')
-	liItems.forEach(li => li.style.listStyleType = 'none')
 	node.dataset.typing = '1'
 
 	const restoreDecorations = () => {
 		links.forEach(a => a.style.removeProperty('text-decoration-color'))
-		liItems.forEach(li => li.style.removeProperty('list-style-type'))
 		delete node.dataset.typing
 	}
 

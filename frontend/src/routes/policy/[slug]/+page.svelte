@@ -18,10 +18,10 @@
 {#if loaded}
 <main>
 	<div class="content">
-		<div class="top" in:typewriter out:typewriter|global={{ duration: responsive.isMobile ? DURATION_MOBILE : DURATION, clean: true }}>
+		<div class="top" in:typewriter out:typewriter={{ duration: responsive.isMobile ? DURATION_MOBILE : DURATION, clean: true }}>
 			<section>
 				<h1 class="uppercase">{data.policy.title}</h1>
-				<div class="portableText">
+				<div class="policy portableText">
 					<PortableText
 					value={data.policy.content}
 					components={{
@@ -64,6 +64,10 @@
 				position: sticky;
 				bottom: 0;
 				transition: var(--transition);
+
+				@media (orientation: portrait), (width <= #{bp.$md}) {
+					display: none;
+				}
 			}
 		}
 	}

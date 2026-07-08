@@ -11,7 +11,7 @@
 {#if listItem === 'bullet'}
 	<li>{@render children()}</li>
 {:else if value._type === 'link'}
-	<a use:obelo class="hover-yellow" href={value?.href} target={value?.blank ? '_blank' : undefined} rel={value?.blank ? 'noopener noreferrer' : undefined}>
+	<a use:obelo class="" href={value?.href} target={value?.blank ? '_blank' : undefined} rel={value?.blank ? 'noopener noreferrer' : undefined}>
 		{@render children()}
 	</a>
 {:else if value._type === 'break'}
@@ -27,8 +27,22 @@
 <style lang="scss">
 	@use '$lib/scss/breakpoints.module' as bp;
 
-	li {
+	:global(.policy.portableText ul) {
 		list-style: disc;
+		padding: 0 1em;
+	}
+	
+	:global(.policy.portableText li) {
+		list-style-type: disc;
+	}
+
+	:global(.policy.portableText a) {
+		display: inline;
+		text-decoration: underline;
+		
+		&:hover::before {
+			display: none;
+		}
 	}
 
 	h2 { margin-top: 1.2em; }
