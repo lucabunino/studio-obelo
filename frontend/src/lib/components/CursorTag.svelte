@@ -1,5 +1,5 @@
 <script>
-    import { typewriter, resetTypewriter } from '$lib/utils/typewriter';
+    import { typewriter } from '$lib/utils/typewriter';
     import { onMount } from 'svelte';
 	import { innerWidth } from 'svelte/reactivity/window'
 
@@ -14,7 +14,7 @@
 	let loaded = $state(false)
 
 	$effect(() => {
-		resetTypewriter(); loaded = true
+		loaded = true
 		function track(e) { mouseX = e.clientX; mouseY = e.clientY }
 		window.addEventListener('mousemove', track)
 		return () => window.removeEventListener('mousemove', track)

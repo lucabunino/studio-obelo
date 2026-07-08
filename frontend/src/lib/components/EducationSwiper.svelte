@@ -1,97 +1,89 @@
 <script>
-	import { onMount } from 'svelte'
+	import { untrack, onDestroy } from 'svelte'
+	import { getResponsive } from '$lib/utils/responsive.svelte.js'
 	import { register } from 'swiper/element/bundle'
 	import { replaceState, goto } from '$app/navigation'
-	import { page } from '$app/state'
+	import { page, navigating } from '$app/state'
+	import { fade } from 'svelte/transition'
 	import Media from '$lib/components/Media.svelte'
 	import { obelo } from '$lib/utils/obelo.js'
 	import { getSwiperStep } from '$lib/stores/swiperStep.svelte.js'
-
+	import timing from '$lib/scss/timing.module.scss'
+	import { typewriter } from '$lib/utils/typewriter.js'
+	import { buildSlides, computeInitialIndex, getDisplayTitle, closeEducationUrl, replaceEducationUrl } from '$lib/utils/education.js'
 	const swiperStep = getSwiperStep()
+	const responsive = getResponsive()
 
 	register()
 
 	let { educations, slug } = $props()
 
 	let ready = $state(false)
+	let loaded = $state(false)
 	let swiperEl = $state(undefined)
 	let hoverSide = $state(null)
 	const tilt = $derived(hoverSide === 'left' ? 'perspective(800px) rotateY(-2deg)' : hoverSide === 'right' ? 'perspective(800px) rotateY(2deg)' : 'perspective(800px) rotateY(0deg)')
 	const peekPrev = $derived(hoverSide === 'left' ? 'translateX(48px)' : 'translateX(0px)')
 	const peekNext = $derived(hoverSide === 'right' ? 'translateX(-48px)' : 'translateX(0px)')
 
-	const slides = $derived(
-		educations.items
-			.filter(item => item._type === 'education')
-			.flatMap(item =>
-				item.education.media.map((media, i) => ({
-					media,
-					slug: item.education.slug.current,
-					title: item.education.title,
-					imageIndex: i + 1,
-				}))
-			)
-	)
+	const slides = $derived(buildSlides(educations))
 
 	let activeRealIndex = $state(0)
 	const activeSlide = $derived(slides[activeRealIndex])
+	let activeSlideRef = $state(null)
+	$effect(() => { activeSlideRef = activeSlide })
+
+	let destroyed = false
+	onDestroy(() => { destroyed = true })
 
 	const seoBase = $derived(Array.isArray(page.data?.seo) ? page.data.seo[0] : page.data?.seo)
-	const displayTitle = $derived(activeSlide?.title ? `${activeSlide.title} | ${seoBase?.seoTitle || ''}` : (seoBase?.seoTitle || ''))
+	const displayTitle = $derived(getDisplayTitle(activeSlide, seoBase))
 
 	function closeSwiper() {
-		if (!activeSlide) { goto('/education'); return }
-		goto(`/education#title=${activeSlide.slug}&i=${activeSlide.imageIndex}`)
+		goto(closeEducationUrl(activeSlide), { replaceState: true, noScroll: true })
 	}
 
-	function computeInitialSlide() {
-		const match = page.url.hash.match(/^#i=(\d+)$/)
-		const offset = match ? parseInt(match[1]) - 1 : 0
-		const base = slides.findIndex(s => s.slug === slug && s.imageIndex === 1)
-		return Math.max(0, base) + offset
-	}
+	$effect(() => {
+		const t = setTimeout(() => { loaded = true }, responsive.isMobile ? +timing.overlayDurationMobile : +timing.overlayDuration)
+		return () => { clearTimeout(t); loaded = false }
+	})
 
-	onMount(() => {
-		const initialSlide = computeInitialSlide()
-		activeRealIndex = initialSlide
-
-		Object.assign(swiperEl, {
-			loop: true,
-			effect: 'creative',
-			speed: 300,
-			grabCursor: true,
-			preventInteractionOnTransition: false,
-			loopAdditionalSlides: 4,
-			slideToClickedSlide: true,
-			initialSlide,
-			keyboard: { enabled: true },
-			mousewheel: {
-                forceToAxis: true,
-                sensitivity: 1,
-                thresholdDelta: 10, 
-            },
-			creativeEffect: {
-				prev: {
-					translate: ['-50%', 0, 0],
-					scale: 0.7,
-					opacity: 1,
+	$effect(() => {
+		if (!swiperEl) return
+		untrack(() => {
+			const initialSlide = computeInitialIndex(slides, slug, page.url.hash)
+			activeRealIndex = initialSlide
+			Object.assign(swiperEl, {
+				loop: true,
+				effect: 'creative',
+				speed: 300,
+				grabCursor: true,
+				preventInteractionOnTransition: false,
+				loopAdditionalSlides: 4,
+				slideToClickedSlide: true,
+				initialSlide,
+				keyboard: { enabled: true },
+				mousewheel: {
+					forceToAxis: true,
+					sensitivity: 1,
+					thresholdDelta: 10,
 				},
-				next: {
-					translate: ['50%', 0, 0],
-					scale: 0.7,
-					opacity: 1,
+				creativeEffect: {
+					prev: { translate: ['-50%', 0, 0], scale: 0.7, opacity: 1 },
+					next: { translate: ['50%', 0, 0], scale: 0.7, opacity: 1 },
 				},
-			},
-			on: {
-				afterInit() { ready = true },
-				slideNextTransitionStart() { activeRealIndex = this.realIndex; if (ready) swiperStep.step('next') },
-				slidePrevTransitionStart() { activeRealIndex = this.realIndex; if (ready) swiperStep.step('prev') },
-				slideChangeTransitionEnd() {
-					if (ready && activeSlide && !page.state.overlay) replaceState(`/education/${activeSlide.slug}#i=${activeSlide.imageIndex}`, {})
+				on: {
+					afterInit() { ready = true; this.loopFix() },
+					slideNextTransitionStart() { activeRealIndex = this.realIndex; if (ready) swiperStep.step('next') },
+					slidePrevTransitionStart() { activeRealIndex = this.realIndex; if (ready) swiperStep.step('prev') },
+					slideChangeTransitionEnd() {
+						if (!ready || destroyed || !activeSlideRef || page.state.overlay || navigating.to || page.route.id !== '/education/[slug]') return
+						replaceState(replaceEducationUrl(activeSlideRef), {})
+					},
 				},
-			},
+			})
+			swiperEl.initialize()
 		})
-		swiperEl.initialize()
 	})
 </script>
 
@@ -107,42 +99,48 @@
 
 <svelte:window onkeydown={(e) => { if (e.key === 'Escape' && !page.state.overlay) closeSwiper() }} />
 
-{#if activeSlide?.title}
-	<h1 class="title">{activeSlide.title}</h1>
+{#if loaded}
+	<div in:fade={{ duration: +timing.fadeDuration }} out:fade|global={{ duration: responsive.isMobile ? +timing.fadeDurationMobile : +timing.fadeDuration }}>
+		{#if activeSlide?.title}
+			{#key activeSlide.title}
+				<h1 class="title" in:typewriter={{ duration: +timing.overlayDuration, delay: +timing.overlayDuration/3 }} out:typewriter={{ duration: +timing.overlayDuration/3, clean: true }}>{activeSlide.title}</h1>
+			{/key}
+		{/if}
+
+		{#if !page.state.overlay}
+			<button class="close" onclick={closeSwiper} use:obelo>× Close</button>
+		{/if}
+
+		<button
+			class="nav nav-prev"
+			aria-label="Previous"
+			onmouseenter={() => hoverSide = 'left'}
+			onmouseleave={() => hoverSide = null}
+			onclick={() => swiperEl.swiper.slidePrev()}
+		></button>
+
+		<button
+			class="nav nav-next"
+			aria-label="Next"
+			onmouseenter={() => hoverSide = 'right'}
+			onmouseleave={() => hoverSide = null}
+			onclick={() => swiperEl.swiper.slideNext()}
+		></button>
+
+		<swiper-container bind:this={swiperEl} init="false" style:--slide-tilt={tilt} style:--peek-prev={peekPrev} style:--peek-next={peekNext}>
+			{#each slides as slide, i}
+				<swiper-slide>
+					<div class="single-education-wrapper">
+						<Media media={slide.media} class="single-education" sizes="70vw" />
+						{#if slide.media?.image?.asset?.description}
+							<span class="caption">{slide.media.image.asset.description}</span>
+						{/if}
+					</div>
+				</swiper-slide>
+			{/each}
+		</swiper-container>
+	</div>
 {/if}
-
-{#if !page.state.overlay}
-	<button class="close" onclick={closeSwiper} use:obelo>× Close</button>
-{/if}
-
-<button
-	class="nav nav-prev"
-	aria-label="Previous"
-	onmouseenter={() => hoverSide = 'left'}
-	onmouseleave={() => hoverSide = null}
-	onclick={() => swiperEl.swiper.slidePrev()}
-></button>
-
-<button
-	class="nav nav-next"
-	aria-label="Next"
-	onmouseenter={() => hoverSide = 'right'}
-	onmouseleave={() => hoverSide = null}
-	onclick={() => swiperEl.swiper.slideNext()}
-></button>
-
-<swiper-container bind:this={swiperEl} init="false" style:--slide-tilt={tilt} style:--peek-prev={peekPrev} style:--peek-next={peekNext}>
-	{#each slides as slide, i}
-		<swiper-slide>
-			<div class="single-education-wrapper">
-				<Media media={slide.media} class="single-education" />
-				{#if slide.media?.image?.asset?.description}
-					<span class="caption">{slide.media.image.asset.description}</span>
-				{/if}
-			</div>
-		</swiper-slide>
-	{/each}
-</swiper-container>
 
 <style lang="scss">
 	.title {

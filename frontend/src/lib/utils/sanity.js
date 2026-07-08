@@ -67,10 +67,12 @@ export async function getWorks() {
 	return client.fetch(`*[_type == "work" && status == "public" && !(_id in path('drafts.**'))] | order(orderRank) {
 		_id,
 		title,
+		client->{ title },
 		slug,
 		ongoing,
 		startDate,
 		endDate,
+		place->{ title },
 		services[]->{ title, slug },
 		tags[]->{ title, slug },
 		thumbnail { ${media} },
@@ -80,6 +82,7 @@ export async function getWorks() {
 export async function getWork(slug) {
 	return client.fetch(`*[_type == "work" && slug.current == $slug && !(_id in path('drafts.**'))][0] {
 		title,
+		client->{ title },
 		slug,
 		startDate,
 		endDate,

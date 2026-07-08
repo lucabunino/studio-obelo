@@ -1,18 +1,6 @@
 import timing from '$lib/scss/timing.module.scss'
 
-let animationEndMs = 0
-
-export const MS_PER_CHAR = parseFloat(timing.typewriterPerChar)
-const FADE_DURATION_DEFAULT = parseInt(timing.fadeDuration)
-const HOLD_DURATION_DEFAULT = parseInt(timing.typewriterHold)
-const MIN_DURATION = parseInt(timing.typewriterMinDuration)
-const START_DELAY = 0
-
-export function resetTypewriter() {
-	animationEndMs = 0
-}
-
-function wrapChars(node) {
+export function wrapChars(node) {
 	const charSpans = []
 	const textNodes = []
 	const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT, {
@@ -60,10 +48,10 @@ function wrapChars(node) {
 
 export function typewriter(node, { duration: fixedDuration, delay: fixedDelay, clean = false, glyphs = false, fade = true, hold = true, revealDelay = 0 } = {}, { direction = 'in' } = {}) {
 	const charSpans = wrapChars(node)
-	const charReveal = charSpans.length * MS_PER_CHAR
-	const effectiveFadeDuration = fade === true ? FADE_DURATION_DEFAULT : fade === false ? 0 : fade
-	const effectiveHoldDuration = hold === true ? HOLD_DURATION_DEFAULT : hold === false ? 0 : hold
-	const duration = fixedDuration ?? Math.max(effectiveFadeDuration + effectiveHoldDuration + revealDelay + charReveal, MIN_DURATION)
+	const charReveal = charSpans.length * +timing.typewriterPerChar
+	const effectiveFadeDuration = fade === true ? +timing.fadeDuration : fade === false ? 0 : fade
+	const effectiveHoldDuration = hold === true ? +timing.typewriterHold : hold === false ? 0 : hold
+	const duration = fixedDuration ?? Math.max(effectiveFadeDuration + effectiveHoldDuration + revealDelay + charReveal, +timing.typewriterMinDuration)
 
 	if (!charSpans.length) return { duration: 0 }
 
@@ -104,9 +92,6 @@ export function typewriter(node, { duration: fixedDuration, delay: fixedDelay, c
 		}
 	}
 
-	const myStart = animationEndMs
-	if (fixedDelay === undefined) animationEndMs = myStart + duration
-
 	if (glyphs) {
 		const obeloPhaseMs = Math.min(N * 0.5, duration * 0.5)
 		const obeloRatio = obeloPhaseMs / duration
@@ -118,7 +103,7 @@ export function typewriter(node, { duration: fixedDuration, delay: fixedDelay, c
 		let obelosDone = false
 
 		return {
-			delay: fixedDelay ?? (START_DELAY + myStart),
+			delay: fixedDelay ?? 0,
 			duration,
 			tick(t) {
 				if (t < obeloRatio) {
@@ -156,7 +141,7 @@ export function typewriter(node, { duration: fixedDuration, delay: fixedDelay, c
 	let fadeDone = false
 
 	return {
-		delay: fixedDelay ?? (START_DELAY + myStart),
+		delay: fixedDelay ?? 0,
 		duration,
 		tick(t) {
 			if (t < fadeRatio) {

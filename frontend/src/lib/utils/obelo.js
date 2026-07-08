@@ -1,4 +1,4 @@
-export function obelo(node) {
+export function obelo(node, { touch = true } = {}) {
 	const chars = [...node.textContent]
 	node.innerHTML = ''
 	node.setAttribute('aria-label', chars.join(''))
@@ -13,7 +13,7 @@ export function obelo(node) {
 		span.textContent = c
 		node.appendChild(span)
 
-		if (c.trim() !== '') {
+		if (touch && c.trim() !== '') {
 			span.addEventListener('mouseenter', () => {
 				if (Date.now() - lastTouch < 500) return
 				if (timers.has(span)) {
@@ -35,13 +35,6 @@ export function obelo(node) {
 		return span
 	})
 
-	function onNodeOut(e) {
-		if (node.contains(e.relatedTarget)) return
-		timers.forEach(t => clearTimeout(t))
-		timers.clear()
-		spans.forEach((span, i) => { span.textContent = chars[i] })
-	}
-
 	function onTouchStart() {
 		lastTouch = Date.now()
 		timers.forEach(t => clearTimeout(t))
@@ -62,13 +55,15 @@ export function obelo(node) {
 		})
 	}
 
-	node.addEventListener('mouseleave', onNodeOut)
-	node.addEventListener('touchstart', onTouchStart, { passive: true })
+	if (touch) {
+		node.addEventListener('touchstart', onTouchStart, { passive: true })
+	}
 
 	return {
 		destroy() {
-			node.removeEventListener('mouseenter', onNodeOut)
-			node.removeEventListener('touchstart', onTouchStart)
+			if (touch) {
+				node.removeEventListener('touchstart', onTouchStart)
+			}
 			timers.forEach(t => clearTimeout(t))
 		}
 	}

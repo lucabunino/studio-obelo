@@ -7,7 +7,7 @@ function mediaPreview(items) {
 	if (!item) return null
 	if (item.type === 'image') return item.image
 	if (item.type === 'gif') return item.gifFrames?.[0]
-	if (item.type === 'video') return item.videoCover
+	if (item.type === 'video') return item.videoPoster
 	return null
 }
 

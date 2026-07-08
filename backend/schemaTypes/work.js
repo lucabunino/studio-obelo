@@ -36,6 +36,12 @@ export default {
 		},
 		{...status, group: 'Info'},
 		{
+			name: 'client',
+			type: 'reference',
+			to: [{type: 'client'}],
+			group: 'Info',
+		},
+		{
 			name: 'ongoing',
 			type: 'boolean',
 			initialValue: false,
@@ -119,15 +125,15 @@ export default {
 			ongoing: 'ongoing',
 			coverType: 'thumbnail.type',
 			image: 'thumbnail.image',
-			videoCover: 'thumbnail.videoCover',
+			videoPoster: 'thumbnail.videoPoster',
 		},
-		prepare({title, startDate, endDate, ongoing, coverType, image, videoCover}) {
+		prepare({title, startDate, endDate, ongoing, coverType, image, videoPoster}) {
 			const start = startDate ? String(startDate).slice(0, 4) : ''
 			const end = ongoing ? 'Ongoing' : endDate ? String(endDate).slice(0, 4) : ''
 			const subtitle = [start, end].filter(Boolean).join(' – ') || 'No date'
 			let previewMedia = null
 			if (coverType === 'image') previewMedia = image
-			if (coverType === 'video') previewMedia = videoCover
+			if (coverType === 'video') previewMedia = videoPoster
 			return {title, subtitle, media: previewMedia}
 		},
 	},

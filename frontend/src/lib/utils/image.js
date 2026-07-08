@@ -7,7 +7,7 @@ export function urlFor(source) {
 	if (source) return builder.image(source).auto('format')
 }
 
-const SRCSET_WIDTHS = [400, 800, 1200, 1600, 2000]
+const SRCSET_WIDTHS = [400, 800, 1200, 1600, 2000, 2400]
 
 export function buildSrcset(image, widths = SRCSET_WIDTHS) {
 	if (!image) return ''

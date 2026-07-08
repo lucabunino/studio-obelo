@@ -3,18 +3,24 @@
 	import PortableTextStyle from '$lib/components/PortableTextStyle.svelte'
 	import Media from '$lib/components/Media.svelte'
 	import { getOrientation } from '$lib/utils/image.js'
-	import { typewriter, resetTypewriter } from '$lib/utils/typewriter.js'
-	import { untrack } from 'svelte'
+	import { typewriter } from '$lib/utils/typewriter.js'
+	import { onMount } from 'svelte'
 	import { page } from '$app/state'
 	import timing from '$lib/scss/timing.module.scss'
-	const DURATION = parseInt(timing.overlayDuration)
-	const FADE_DURATION = parseInt(timing.fadeDuration)
+	import { getResponsive } from '$lib/utils/responsive.svelte.js'
+	import { useScrollLock } from '$lib/utils/scrollLock.svelte.js'
 	import CursorTag from '$lib/components/CursorTag.svelte'
     import { fade, fly, slide } from 'svelte/transition';
     import { innerHeight } from 'svelte/reactivity/window';
 
+	const responsive = getResponsive()
 	let { data } = $props()
 	const educations = $derived(data.educations)
+	
+	let readMore = $state(false)
+	let readMoreHeight = $state(undefined)
+
+	useScrollLock(() => readMore)
 
 	const itemsWithIndex = $derived.by(() => {
 		let mediaCount = 0
@@ -30,17 +36,16 @@
 		})
 	})
 	let loaded = $state(false)
-	let cols = $state(untrack(() => data.cols))
+	let cols = $state(data.cols)
 	let gridHeight = $state(0)
 	let hoveredEdu = $state(null)
 
-	$effect(() => { document.cookie = `edu-cols=${cols}; path=/; max-age=31536000` })
-
-	$effect(() => {
-		resetTypewriter()
-		const t = setTimeout(() => { loaded = true }, DURATION)
+	onMount(() => {
+		const t = setTimeout(() => { loaded = true }, responsive.isMobile ? +timing.overlayDurationMobile : +timing.overlayDuration)
 		return () => { clearTimeout(t); loaded = false }
 	})
+
+	$effect(() => { document.cookie = `edu-cols=${cols}; path=/; max-age=31536000` })
 
 	$effect(() => {
 		if (!loaded) return
@@ -56,50 +61,61 @@
 	})
 </script>
 
-<main>
+<main style:--readMoreHeight="{readMoreHeight}px">
 	<h1 class="sr-only">Education</h1>
 	{#if loaded}
-		<aside class="intro" aria-label="Introduction" in:typewriter={{ duration: DURATION }} out:typewriter|global={{ duration: DURATION, clean: true }}>
-			{#if educations?.description}
-				<div class="description portableText">
-					<PortableText value={educations.description} components={{ block: PortableTextStyle, marks: { link: PortableTextStyle } }} />
-				</div>
-			{/if}
-			{#if educations?.teachingsOngoing?.length}
-				<ul class="teachings" aria-label="Ongoing teaching">
-					<li>Currently teaching at:</li>
-					{#each educations.teachingsOngoing as t}
-						<li class="teaching">{t.title}</li>
-					{/each}
-				</ul>
-			{/if}
+		<aside class="intro" aria-label="Introduction" out:typewriter|global={{ duration: responsive.isMobile ? +timing.overlayDurationMobile : +timing.overlayDuration, clean: true }}>
+			<button class="bottom-button uppercase under-md glass-1" onclick={() => readMore = !readMore}>{#if !readMore}Read more{:else}Close{/if}</button>
+			<div class="intro-content" in:typewriter={{ duration: +timing.overlayDuration }}>
+				{#if educations?.description}
+					<div class="description portableText" bind:clientHeight={readMoreHeight}>
+						<PortableText value={educations.description} components={{ block: PortableTextStyle, types: { break: PortableTextStyle }, marks: { link: PortableTextStyle } }} />
+					</div>
+				{/if}
+				{#if educations?.teachingsOngoing?.length}
+					<ul class="teachings" aria-label="Ongoing teaching" >
+						<li class="mt">Currently teaching at:</li>
+						{#each educations.teachingsOngoing as t}
+							<li class="teaching">{t.title}</li>
+						{/each}
+					</ul>
+					{#if readMore}
+						<ul class="teachings under-md read-more" aria-label="Ongoing teaching" transition:slide={{ duration: +timing.overlayDuration }}>
+							<li class="mt">Currently teaching at:</li>
+							{#each educations.teachingsOngoing as t}
+								<li class="teaching">{t.title}</li>
+							{/each}
+						</ul>
+					{/if}
+				{/if}
+			</div>
 		</aside>
 	{/if}
 	<div class="grid" style="--cols: {cols}" aria-label="Works" bind:clientHeight={gridHeight}>
-{#each itemsWithIndex as item, i}
-				{#if item._type === 'gap'}
-					{#each Array(item.gap) as _, j}
-						<div class="gap" aria-hidden="true"></div>
-					{/each}
-				{:else if item._type === 'education'}
-					{@const edu = item.education}
-					{#each edu.media as media, j (media)}
-						{#if loaded}
-							<a id="{edu.slug.current}-{j+1}" href="/education/{edu.slug.current}#i={j+1}" class="media-item {getOrientation(media)}"
-								onmouseenter={() => hoveredEdu = edu}
-								onmouseleave={() => hoveredEdu = null}
-								in:fade={{ delay: media._mediaIndex * 80, duration: FADE_DURATION }}
-								out:fade|global={{ duration: FADE_DURATION }}
-							>
-								<Media {media} class="education" />
-							</a>
-						{/if}
-					{/each}
-				{/if}
-			{/each}
+		{#each itemsWithIndex as item, i}
+			{#if item._type === 'gap'}
+				{#each Array(item.gap) as _, j}
+					<div class="gap" aria-hidden="true"></div>
+				{/each}
+			{:else if item._type === 'education'}
+				{@const edu = item.education}
+				{#each edu.media as media, j (media)}
+					{#if loaded}
+						<a id="{edu.slug.current}-{j+1}" href="/education/{edu.slug.current}#{edu.slug.current}-{j+1}" class="media-item {getOrientation(media)}"
+							onmouseenter={() => hoveredEdu = edu}
+							onmouseleave={() => hoveredEdu = null}
+							in:fade={{ delay: responsive.isMobile ? +timing.overlayDurationMobile : media._mediaIndex * 80, duration: +timing.fadeDuration }}
+							out:fade|global={{ duration: responsive.isMobile ? +timing.fadeDurationMobile : +timing.fadeDuration }}
+						>
+							<Media {media} class="education" sizes="{getOrientation(media) === 'landscape' ? Math.round(200/cols) : Math.round(100/cols)}vw" />
+						</a>
+					{/if}
+				{/each}
+			{/if}
+		{/each}
 	</div>
 	{#if loaded}
-		<div class="zoom-controls" role="group" aria-label="Zoom" in:fade={{ delay: itemsWithIndex.length * 80, duration: FADE_DURATION }}>
+		<div class="zoom-controls" role="group" aria-label="Zoom" in:fade={{ delay: responsive.isMobile ? +timing.overlayDurationMobile : itemsWithIndex.length * 80, duration: +timing.fadeDuration }} out:fade|global={{ duration: responsive.isMobile ? +timing.fadeDurationMobile : +timing.fadeDuration }}>
 			<button class="glass-1"
 				aria-label="Zoom out"
 				disabled={cols >= 12}
@@ -135,6 +151,10 @@
 		position: relative;
 		padding: var(--sp-12);
 		padding-bottom: calc(var(--headerHeight) + var(--sp-12));
+
+		@media (orientation: portrait), (width <= #{bp.$md}) {
+			padding: var(--sp-6);
+		}
 	}
 
 	.intro {
@@ -143,7 +163,6 @@
 		left: var(--sp-12);
 		display: flex;
 		flex-direction: column;
-		gap: var(--sp-12);
 		pointer-events: none;
 		width: var(--infoWidth);
 		z-index: 2;
@@ -152,10 +171,50 @@
 			pointer-events: auto;
 		}
 
-		.teachings {
-			.teaching {
+		.bottom-button {
+			display: none;
+		}
+
+		.intro-content {
+			display: flex;
+			flex-direction: column;
+
+			.teachings {
+				&.under-md { display: none; }
+
+				.mt {
+					margin-top: var(--sp-12);
+				}
+				
+				.teaching {
+					display: block;
+					min-width: 400px;
+				}
+			}
+		}
+
+		@media (orientation: portrait), (width <= #{bp.$md}) {
+			top: unset;
+			left: 0;
+			bottom: 0;
+			width: stretch;
+
+			.bottom-button {
+				width: stretch;
+				padding: var(--sp-12);
+				margin: 0 var(--sp-6) -1px;
+				text-align: center;
 				display: block;
-				min-width: 400px;
+			}
+
+			.intro-content {
+				padding: var(--sp-12) var(--sp-12) var(--headerHeight);
+				background-color: var(--black);
+
+				.teachings {
+					display: none;
+					&.under-md { display: block; }
+				}
 			}
 		}
 	}
@@ -166,6 +225,16 @@
 		column-gap: var(--sp-4);
 		row-gap: var(--sp-120);
 		position: relative;
+
+		@media (orientation: portrait), (width <= #{bp.$md}) {
+			grid-template-columns: repeat(4, 1fr);
+			row-gap: var(--sp-60);
+			margin: 0 0 calc(var(--headerHeight) + var(--readMoreHeight) + var(--sp-12)*2 + 1.2em + var(--sp-12));
+		}
+
+		@media (width <= #{bp.$xs}) {
+			grid-template-columns: repeat(3, 1fr);
+		}
 	}
 
 	.media-item {
@@ -186,6 +255,10 @@
 		display: flex;
 		column-gap: var(--sp-3);
 		z-index: 2;
+
+		@media (width <= #{bp.$md}) {
+			display: none;
+		}
 
 		button {
 			width: 1.8rem;

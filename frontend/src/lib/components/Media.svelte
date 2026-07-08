@@ -1,27 +1,35 @@
 <script>
 	import { urlFor, buildSrcset, getAspectRatioClass } from '$lib/utils/image.js'
+	import { getResponsive } from '$lib/utils/responsive.svelte.js'
 	import bp from '$lib/scss/breakpoints.module.scss'
 
 	let { media, class: className = '', sizes = '100vw' } = $props()
 
+	const responsive = getResponsive()
+
+	const activePoster = $derived(
+		responsive.isMobile && media.videoPosterMobile ? media.videoPosterMobile : media.videoPoster
+	)
+
 	const ratioClass = $derived(getAspectRatioClass(media))
-	const aspectRatio = $derived(media.type === 'image' ? media.image?.asset?.metadata?.dimensions?.aspectRatio : media.videoPoster?.asset?.metadata?.dimensions?.aspectRatio )
+	const aspectRatio = $derived(media.type === 'image' ? media.image?.asset?.metadata?.dimensions?.aspectRatio : activePoster?.asset?.metadata?.dimensions?.aspectRatio)
 
 	const paletteColor = $derived(
 		media.type === 'image'
 			? media.image?.asset?.metadata?.palette?.dominant?.background
-			: media.videoPoster?.asset?.metadata?.palette?.dominant?.background
+			: activePoster?.asset?.metadata?.palette?.dominant?.background
 	)
 
 	const desktopSrcset = $derived(media.type === 'image' ? buildSrcset(media.image) : '')
 	const mobileSrcset = $derived(media.type === 'image' && media.imageMobile ? buildSrcset(media.imageMobile) : '')
 
 	let loaded = $state(false)
-	let imgEl = $state()
-	let videoEl = $state()
-
-	$effect(() => { if (imgEl?.complete) loaded = true })
-	$effect(() => { if (videoEl && videoEl.readyState >= 3) loaded = true })
+	$effect(() => {
+		if (media.type !== 'video' || !activePoster) return
+		const img = new Image()
+		img.onload = () => { loaded = true }
+		img.src = urlFor(activePoster).width(800).url()
+	})
 </script>
 
 <div
@@ -40,19 +48,18 @@
 				<source media="(max-width: {parseInt(bp.md) - 1}px)" srcset={mobileSrcset} {sizes} />
 			{/if}
 			<img
-				bind:this={imgEl}
 				srcset={desktopSrcset}
 				src={urlFor(media.image).width(800).url()}
 				alt={media.image?.asset?.altText ?? ''}
 				{sizes}
+				loading="lazy"
 				onload={() => loaded = true}
 			/>
 		</picture>
 	{:else if media.type === 'video'}
 		<video
-			bind:this={videoEl}
 			autoplay muted loop playsinline
-			oncanplay={() => loaded = true}
+			poster={activePoster ? urlFor(activePoster).width(800).url() : undefined}
 		>
 			{#if media.videoMobile}
 				<source media="(max-width: {parseInt(bp.md) - 1}px)" src={media.videoMobile?.asset?.url} type="video/mp4" />
@@ -88,6 +95,7 @@
 			max-height: 100%;
 			width: auto;
 			height: auto;
+			aspect-ratio: var(--aspectRatio);
 		}
 
 		.color-overlay {
@@ -122,8 +130,11 @@
 			&[data-aspect-ratio='_9x21'] { height: 100vh; aspect-ratio: 9/21; max-width: 100vw; }
 
 			@media (orientation: portrait) {
+				border-radius: var(--sp-2);
+				margin: var(--sp-1) var(--sp-6);
+
 				&[data-aspect-ratio] {
-					width: 100%;
+					width: stretch;
 					height: auto;
 					max-width: unset;
 					max-height: unset;
@@ -146,12 +157,24 @@
 			height: 60vh;
 			max-height: 80vh;
 			width: auto;
-			max-width: 70vw;
+			max-width: 90vw;
 			aspect-ratio: var(--aspectRatio);
 
 			img, video {
 				height: 100%;
 				width: 100%;
+				object-fit: cover;
+			}
+		}
+
+		&.education-scroll {
+			width: 100%;
+			height: auto;
+			aspect-ratio: var(--aspectRatio);
+
+			img, video {
+				width: 100%;
+				height: auto;
 				object-fit: cover;
 			}
 		}
@@ -166,25 +189,70 @@
 				height: 100%;
 				object-fit: cover;
 			}
+
+			@media (orientation: portrait), (width <= #{bp.$md}) {
+				position: absolute;
+				inset: 0;
+				max-width: 80%;
+				max-height: 80%;
+				align-self: center;
+				justify-self: center;
+			}
+		}
+
+		&.works-bg {
+			width: 100%;
+			height: 100%;
+			position: absolute;
+			inset: 0;
+			z-index: 0;
+
+			img, video {
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+			}
 		}
 
 		&.single-work {
+			aspect-ratio: var(--aspectRatio);
 			width: 100%;
 			height: auto;
+			// baseline = sticky (capped); matches the sticky/relative auto-switch in +page.svelte's .block (see docs/adr/0001-sticky-block-breakpoints.md)
+			max-height: calc(100vh - var(--headerHeight) - var(--sp-12));
+
+			@media (orientation: portrait),
+				(min-width: #{bp.$md}) and (max-width: calc(290px / 0.18)) and (min-width: calc(290px + 160vh)),
+				(min-width: calc(290px / 0.18)) and (max-width: calc(400px / 0.18)) and (min-aspect-ratio: 80/41),
+				(min-width: calc(400px / 0.18)) and (min-width: calc(400px + 160vh)) {
+				max-height: unset;
+			}
+
+			&.force-sticky {
+				max-height: calc(100vh - var(--headerHeight) - var(--sp-12));
+			}
+			&.force-relative {
+				max-height: unset;
+			}
+
+			&[data-aspect-ratio='_21x9'] { aspect-ratio: 21/9; }
+			&[data-aspect-ratio='_8x5']  { aspect-ratio: 8/5; }
+			&[data-aspect-ratio='_3x2']  { aspect-ratio: 3/2; }
+			&[data-aspect-ratio='_4x3']  { aspect-ratio: 4/3; }
+			&[data-aspect-ratio='_5x4']  { aspect-ratio: 5/4; }
+			&[data-aspect-ratio='_1x1']  { aspect-ratio: 1; }
+			&[data-aspect-ratio='_4x5']  { aspect-ratio: 4/5; }
+			&[data-aspect-ratio='_3x4']  { aspect-ratio: 3/4; }
+			&[data-aspect-ratio='_2x3']  { aspect-ratio: 2/3; }
+			&[data-aspect-ratio='_5x8']  { aspect-ratio: 5/8; }
+			&[data-aspect-ratio='_9x21'] { aspect-ratio: 9/21; }
 
 			img, video {
 				width: 100%;
 				height: auto;
-				max-height: calc(100vh - var(--headerHeight) - var(--sp-12));
 				object-fit: cover;
 				object-position: var(--objectPosition, left);
 				display: block;
-			}
-
-			&.relative {
-				img, video {
-					max-height: unset;
-				}
 			}
 
 			&.contain {
@@ -193,8 +261,21 @@
 				height: calc((100vw - var(--infoWidth))/8*5);
 				max-height: calc(100vh - var(--headerHeight) - var(--sp-12));
 
-				&.relative {
-					height: calc((100vw - var(--infoWidth))/8*5);
+				@media (orientation: portrait),
+					(min-width: #{bp.$md}) and (max-width: calc(290px / 0.18)) and (min-width: calc(290px + 160vh)),
+					(min-width: calc(290px / 0.18)) and (max-width: calc(400px / 0.18)) and (min-aspect-ratio: 80/41),
+					(min-width: calc(400px / 0.18)) and (min-width: calc(400px + 160vh)) {
+					max-height: unset;
+				}
+
+				@media (orientation: portrait), (width <= #{bp.$md}) {
+					height: auto;
+				}
+
+				&.force-sticky {
+					max-height: calc(100vh - var(--headerHeight) - var(--sp-12));
+				}
+				&.force-relative {
 					max-height: unset;
 				}
 
@@ -213,6 +294,18 @@
 			width: auto;
 			height: 100%;
 			max-height: 60vh;
+
+			@media (orientation: portrait), (width <= #{bp.$md}) {
+				width: 100%;
+
+				img, video {
+					width: 100%;
+					height: auto;
+					object-fit: cover;
+					object-position: var(--objectPosition, left);
+					display: block;
+				}
+			}
 		}
 	}
 </style>

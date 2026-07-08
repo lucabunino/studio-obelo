@@ -1,10 +1,7 @@
 import { page } from '$app/state'
 import { beforeNavigate, afterNavigate, goto, pushState, preloadData } from '$app/navigation'
-import { innerWidth, innerHeight } from 'svelte/reactivity/window'
-import bp from '$lib/scss/breakpoints.module.scss'
+import { getResponsive } from '$lib/utils/responsive.svelte.js'
 import timing from '$lib/scss/timing.module.scss'
-
-const DURATION = parseInt(timing.overlayDuration)
 const OVERLAY_ROUTES = ['/works', '/about']
 
 export function isOverlayRoute(pathname) {
@@ -16,10 +13,12 @@ function isFullscreenPath(pathname) {
 }
 
 export function getPageInfo() {
-	const isMobile = $derived(innerWidth.current < parseInt(bp.md) || innerHeight.current > innerWidth.current)
+	const responsive = getResponsive()
+	const isMobile = $derived(responsive.isMobile)
 	const isOverlay = $derived(!isMobile && !!page.state.overlay)
 	const isFullscreen = $derived(!isOverlay && page.url.pathname !== '/')
-	const showInfo = $derived(!isFullscreen || (isMobile && page.url.pathname === '/about'))
+	// const showInfo = $derived(!isFullscreen || (isMobile && page.url.pathname === '/about'))
+	const showInfo = $derived(!isFullscreen)
 	const activePath = $derived(page.state.overlay ?? page.url.pathname)
 	const pageName = $derived(
 		!activePath || activePath === '/' ? 'home' :
@@ -62,7 +61,7 @@ export function getPageInfo() {
 			setTimeout(async () => {
 				await goto(to.url.pathname + to.url.search + to.url.hash)
 				navigating = false
-			}, DURATION)
+			}, isMobile ? +timing.overlayDurationMobile : +timing.overlayDuration)
 			return
 		}
 		if (!isMobile && isOverlay && to && isOverlayRoute(to.url.pathname) && type !== 'popstate') {

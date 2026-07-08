@@ -1,3 +1,5 @@
+import {EnterIcon} from '@sanity/icons'
+
 export default function wysiwyg(fieldName, groupName) {
 	return {
 		name: fieldName || 'body',
@@ -39,6 +41,25 @@ export default function wysiwyg(fieldName, groupName) {
 					],
 				},
 			},
+			{
+				name: 'break',
+				type: 'object',
+				title: 'Break',
+				icon: EnterIcon,
+				fields: [
+					{
+						name: 'style',
+						type: 'string',
+						hidden: true,
+						initialValue: 'Break',
+					},
+				],
+				preview: {
+					prepare() {
+						return {title: 'Break'}
+					},
+				},
+			}
 		],
 		group: groupName,
 	}

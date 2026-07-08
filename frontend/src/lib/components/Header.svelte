@@ -1,32 +1,37 @@
 <script>
 	import { page } from '$app/state'
 	import { obelo } from '$lib/utils/obelo.js'
-	import { typewriter, resetTypewriter } from '$lib/utils/typewriter.js'
+	import { typewriter } from '$lib/utils/typewriter.js'
 	import { handleOverlay, isOverlayActive } from '$lib/utils/overlay.js'
+	import { getResponsive } from '$lib/utils/responsive.svelte.js'
 	import { onMount } from 'svelte'
 	import timing from '$lib/scss/timing.module.scss'
-
-	const DURATION = parseInt(timing.overlayDuration)
+	const responsive = getResponsive()
 	let loaded = $state(false)
 	$effect(() => {
-		resetTypewriter();
-		const t = setTimeout(() => { loaded = true; }, DURATION)
+		const t = setTimeout(() => { loaded = true; }, timing.overlayDuration)
 		return () => clearTimeout(t)
 	})
 
 	function isActive(href) {
 		return isOverlayActive(href)
 	}
+
+	const hideShadow = $derived(
+		page.url.pathname === '/' ||
+		page.url.pathname.startsWith('/works/') ||
+		page.url.pathname.startsWith('/education')
+	)
 </script>
 
 {#if loaded}
-	<header in:typewriter={{ duration: 31*15, fade: false, hold: false }}>
-		<a use:obelo class="logo ellipsis" href="/">studio òbelo</a>
+	<header in:typewriter={{ duration: 31*15, fade: false, hold: false }} class:no-shadow={hideShadow}>
+		<a use:obelo={{ touch: false }} class="logo ellipsis" href="/">studio òbelo</a>
 		<nav class="menu ellipsis" class:bg={isActive('/works') || isActive('/about')}>
 			{#if loaded}
-				<a use:obelo class="menu-item uppercase ellipsis" href="/works" aria-current={isActive('/works') ? 'page' : undefined} onclick={(e) => handleOverlay(e, '/works')}>Works</a>
-				<a use:obelo class="menu-item uppercase ellipsis" href="/about" aria-current={isActive('/about') ? 'page' : undefined} onclick={(e) => handleOverlay(e, '/about')}>About</a>
-				<a use:obelo class="menu-item uppercase ellipsis" href="/education" aria-current={isActive('/education') ? 'page' : undefined}>Education</a>
+				<a use:obelo={{ touch: false }} class="menu-item uppercase ellipsis" href="/works" aria-current={isActive('/works') ? 'page' : undefined} onclick={responsive.isMobile ? undefined : (e) => handleOverlay(e, '/works')}>Works</a>
+				<a use:obelo={{ touch: false }} class="menu-item uppercase ellipsis" href="/about" aria-current={isActive('/about') ? 'page' : undefined} onclick={responsive.isMobile ? undefined : (e) => handleOverlay(e, '/about')}>About</a>
+				<a use:obelo={{ touch: false }} class="menu-item uppercase ellipsis" href="/education" aria-current={isActive('/education') ? 'page' : undefined}>Education</a>
 			{/if}
 		</nav>
 	</header>
@@ -47,6 +52,31 @@
 		grid-template-columns: var(--infoWidth) var(--overlayWidth) repeat(9, 1fr);
 		pointer-events: none;
 
+		@media (orientation: portrait), (width <= #{bp.$md}) {
+			pointer-events: all;
+			background-color: var(--bgColor);
+		}
+
+		&::before {
+			content: '';
+			display: none;
+			position: absolute;
+			bottom: 100%;
+			left: 0;
+			right: 0;
+			height: var(--sp-24);
+			pointer-events: none;
+
+			@media (orientation: portrait), (width <= #{bp.$md}) {
+				display: block;
+				background: linear-gradient(to bottom, transparent, var(--bgColor));
+			}
+		}
+
+		&.no-shadow::before {
+			display: none;
+		}
+
 		a {
 			pointer-events: all;
 		}
@@ -55,6 +85,10 @@
 			margin	: 0 var(--sp-12);
 			height: 100%;
 			align-content: center;
+
+			@media (orientation: portrait), (width <= #{bp.$md}) {
+				color: var(--fgColor);
+			}
 		}
 
 		.menu {

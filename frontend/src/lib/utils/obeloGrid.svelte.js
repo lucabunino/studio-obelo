@@ -183,7 +183,7 @@ export function obeloGrid(node, params = {}) {
 				const span = document.createElement('span')
 				span.textContent = '÷'
 				span.style.opacity = '0'
-				span.style.transition = `opacity 0.4s ease ${i * 100}ms`
+				span.style.transition = `opacity 0.4s ease ${i * 6}ms`
 				div.appendChild(span)
 			}
 

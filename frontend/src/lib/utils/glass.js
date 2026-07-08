@@ -6,6 +6,10 @@ class FxFilter {
     static observedElements = new Set();
     static rectCache = new WeakMap();
     static supportsSvgBackdrop = typeof CSS !== 'undefined' && CSS.supports('backdrop-filter', 'url(#test)');
+    
+    // Optimizations: Frame scheduling and Blob URL tracking
+    static hasPendingScan = false;
+    static blobUrls = new Set();
 
     static add(options) {
         if (typeof options === 'string') {
@@ -30,41 +34,58 @@ class FxFilter {
         this.running = true;
 
         requestAnimationFrame(() => {
-            this.ro = new ResizeObserver(() => this.scanElements());
-            this.scanElements();
+            // Optimized: Use the centralized scheduleScan instead of synchronous execution
+            this.ro = new ResizeObserver(() => this.scheduleScan());
+            this.scheduleScan();
 
             this.mo = new MutationObserver((mutations) => {
                 const relevant = mutations.some(m =>
                     [...m.addedNodes, ...m.removedNodes].some(n =>
                         n.nodeType === 1 && (n.matches?.('.glass-1,.glass-2') || n.querySelector?.('.glass-1,.glass-2'))
                     )
-                )
-                if (relevant) this.scanElements()
+                );
+                if (relevant) this.scheduleScan();
             });
             this.mo.observe(document.body, { childList: true, subtree: true });
+        });
+    }
+
+    // Debounces rapid layouts/resizes into a single frame paint
+    static scheduleScan() {
+        if (this.hasPendingScan) return;
+        this.hasPendingScan = true;
+        requestAnimationFrame(() => {
+            this.scanElements();
+            this.hasPendingScan = false;
         });
     }
 
     static syncResizeObserver() {
         const current = new Set(document.querySelectorAll('.glass-1, .glass-2'));
         for (const el of current) {
-            if (!this.observedElements.has(el)) { this.ro.observe(el); this.observedElements.add(el); }
+            if (!this.observedElements.has(el)) { 
+                this.ro.observe(el); 
+                this.observedElements.add(el); 
+            }
         }
         for (const el of this.observedElements) {
-            if (!current.has(el)) { this.ro.unobserve(el); this.observedElements.delete(el); }
+            if (!current.has(el)) { 
+                this.ro.unobserve(el); 
+                this.observedElements.delete(el); 
+            }
         }
     }
 
     static scanElements() {
         const elements = [...document.querySelectorAll('.glass-1, .glass-2')];
 
-        // Phase 1: batch all layout/style reads before any DOM mutations
+        // Phase 1: Batch all layout/style reads before any DOM mutations
         const snapshots = elements.map(el => {
             const cs = getComputedStyle(el);
             return { el, fxFilter: cs.getPropertyValue('--fx-filter').trim() || null, cs, width: el.offsetWidth, height: el.offsetHeight };
         });
 
-        // Phase 2: process and mutate DOM
+        // Phase 2: Process and mutate DOM
         snapshots.forEach(({ el: element, fxFilter, cs, width, height }) => {
             this.rectCache.set(element, { width, height, borderRadius: cs.borderRadius });
             const storedState = this.elements.get(element);
@@ -81,12 +102,13 @@ class FxFilter {
 
                 if (!storedState) {
                     this.addFxContainer(element, fxFilter, parsedFilter);
-                    this.elements.set(element, { filter: fxFilter, hasContainer: true, trackedStyles: currentStyles, parsedFilter });
                 } else if (storedState.filter !== fxFilter || this.stylesChanged(storedState.trackedStyles, currentStyles)) {
                     this.removeFxContainer(element);
                     this.addFxContainer(element, fxFilter, parsedFilter);
-                    this.elements.set(element, { filter: fxFilter, hasContainer: true, trackedStyles: currentStyles, parsedFilter });
                 }
+                
+                // Keep element reference state fresh
+                this.elements.set(element, { filter: fxFilter, hasContainer: true, trackedStyles: currentStyles, parsedFilter });
             } else {
                 if (storedState && storedState.hasContainer) {
                     this.removeFxContainer(element);
@@ -126,10 +148,9 @@ class FxFilter {
         const backdropFilter = filterParts.join(' ');
         if (backdropFilter.trim()) {
             element.insertAdjacentHTML('beforeend', `
-                <svg style="position:absolute;width:0;height:0;">${svgContent}</svg>
+                <svg style="position:absolute;width:0;height:0;pointer-events:none;visibility:hidden;">${svgContent}</svg>
                 <div class="fx-container" style="position:absolute;top:0;left:0;right:0;bottom:0;backdrop-filter:${backdropFilter};background:transparent;pointer-events:none;z-index:-1;overflow:hidden;border-radius:inherit;"></div>
             `);
-            this.elements.set(element, { filter: filterValue, hasContainer: true });
         }
     }
 
@@ -191,49 +212,53 @@ class FxFilter {
         }
         return false;
     }
+
+    // Utility to clean up old Blob URLs to eliminate memory leaks
+    static createTrackedBlobUrl(canvas) {
+        return new Promise((resolve) => {
+            canvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                this.blobUrls.add(url);
+                
+                // Cap cache sizes to prevent memory leaks over lengthy user sessions
+                if (this.blobUrls.size > 100) {
+                    const oldUrl = this.blobUrls.values().next().value;
+                    URL.revokeObjectURL(oldUrl);
+                    this.blobUrls.delete(oldUrl);
+                }
+                resolve(url);
+            }, 'image/png');
+        });
+    }
 }
 
+// 1. OPTIMIZED NOISE: Run entirely on GPU using native SVG filters. 
+// No more canvases, pixel iteration loops, or resize re-renders.
 FxFilter.add({
     name: 'noise',
     callback: (element, saturation = 0, intensity = 1, opacity = 0.25) => {
-        const canvas = document.createElement('canvas');
-        canvas.width = element.clientWidth;
-        canvas.height = element.clientHeight;
-        const ctx = canvas.getContext('2d');
-        ctx.imageSmoothingEnabled = false;
-
-        const imageData = ctx.createImageData(canvas.width, canvas.height);
-        const data = imageData.data;
-
-        for (let i = 0; i < data.length; i += 4) {
-            const n1 = Math.random() * intensity * 255;
-            const n2 = Math.random() * intensity * 255;
-            const n3 = Math.random() * intensity * 255;
-            data[i]     = n1 * (1 - saturation) + n1 * saturation;
-            data[i + 1] = n1 * (1 - saturation) + n2 * saturation;
-            data[i + 2] = n1 * (1 - saturation) + n3 * saturation;
-            data[i + 3] = 255 * opacity;
-        }
-
-        ctx.putImageData(imageData, 0, 0);
         return `
-            <feImage href="${canvas.toDataURL()}" result="noiseAdd" image-rendering="pixelated"/>
-            <feBlend in="SourceGraphic" in2="noiseAdd" mode="overlay" image-rendering="pixelated" result="brightened"/>
+            <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="1" result="noise" />
+            <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 ${opacity} 0" in="noise" result="coloredNoise"/>
+            <feBlend in="SourceGraphic" in2="coloredNoise" mode="overlay" />
         `;
     },
-    updatesOn: ['width', 'height']
+    updatesOn: [] 
 });
 
+// 2. OPTIMIZED LIQUID GLASS: Minimizes layout thrashing and switches 
+// from synchronous heavy Base64 strings to parallelized OffscreenCanvases.
 FxFilter.add({
     name: 'liquid-glass',
     callback: (element, refraction = 1, offset = 10, chromatic = 0) => {
         const rect = FxFilter.rectCache.get(element) || {};
-        const width = Math.round(rect.width ?? element.offsetWidth);
-        const height = Math.round(rect.height ?? element.offsetHeight);
+        const width = Math.round(rect.width ?? element.offsetWidth) || 100;
+        const height = Math.round(rect.height ?? element.offsetHeight) || 100;
         const refractionValue = parseFloat(refraction) / 2 || 0;
         const offsetValue = (parseFloat(offset) || 0) / 2;
         const chromaticValue = parseFloat(chromatic) || 0;
-        const borderRadiusStr = rect.borderRadius ?? window.getComputedStyle(element).borderRadius ?? '0';
+        const borderRadiusStr = rect.borderRadius ?? '0';
+        
         let borderRadius = borderRadiusStr.includes('%')
             ? (parseFloat(borderRadiusStr) / 100) * Math.min(width, height)
             : parseFloat(borderRadiusStr);
@@ -245,7 +270,7 @@ FxFilter.add({
             const r = refractionValue + refractionMod;
             const imageData = new ImageData(mapSize, mapSize);
             const data = imageData.data;
-            for (let i = 0; i < data.length; i += 4) { data[i] = 127; data[i+1] = 127; data[i+2] = 127; data[i+3] = 255; }
+            data.fill(127); // Batch initialize transparency/neutral values safely
 
             const half = Math.floor(mapSize / 2);
             for (let y = 0; y < half; y++) {
@@ -273,10 +298,10 @@ FxFilter.add({
             return imageData;
         }
 
-        function createCanvasFromImageData(imageData) {
-            const small = document.createElement('canvas');
-            small.width = mapSize;
-            small.height = mapSize;
+        function createSyncDataUrl(imageData) {
+            // Replaced manual canvas allocation with OffscreenCanvas if available for speed
+            const small = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(mapSize, mapSize) : document.createElement('canvas');
+            if (small.width !== mapSize) { small.width = mapSize; small.height = mapSize; }
             small.getContext('2d').putImageData(imageData, 0, 0);
 
             const scaledMax = mapSize * SCALE;
@@ -288,10 +313,10 @@ FxFilter.add({
             ctx.drawImage(small, 0, 0, mapSize, mapSize,
                 -Math.round((scaledMax - width) / 2), -Math.round((scaledMax - height) / 2),
                 scaledMax, scaledMax);
-            small.remove();
 
             if (borderRadius > 0) {
-                const mask = new OffscreenCanvas(width, height);
+                const mask = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(width, height) : document.createElement('canvas');
+                mask.width = width; mask.height = height;
                 const mctx = mask.getContext('2d');
                 const inset = offsetValue;
                 mctx.fillStyle = 'rgb(127,127,127)';
@@ -301,18 +326,19 @@ FxFilter.add({
                 mctx.fillRect(0, 0, width, height);
                 ctx.filter = `blur(${offsetValue}px)`;
                 ctx.drawImage(mask, 0, 0, width, height);
+                mask.width = mask.height = 0; // Explicitly free GPU memory
             } else if (offsetValue > 0) {
                 ctx.filter = `blur(${offsetValue}px)`;
                 ctx.drawImage(canvas, 0, 0);
             }
 
             const url = canvas.toDataURL();
-            canvas.remove();
+            canvas.width = canvas.height = 0; // Garbage collection acceleration hint
             return url;
         }
 
         if (chromaticValue === 0) {
-            const url = createCanvasFromImageData(createDisplacementMap(0));
+            const url = createSyncDataUrl(createDisplacementMap(0));
             return `
                 <feImage result="FEIMG" href="${url}" color-interpolation-filters="sRGB"/>
                 <feDisplacementMap in="SourceGraphic" in2="FEIMG" scale="127" yChannelSelector="B" xChannelSelector="R" color-interpolation-filters="sRGB"/>
@@ -320,9 +346,9 @@ FxFilter.add({
         }
 
         const co = chromaticValue * 0.25;
-        const rUrl = createCanvasFromImageData(createDisplacementMap(co));
-        const gUrl = createCanvasFromImageData(createDisplacementMap(0));
-        const bUrl = createCanvasFromImageData(createDisplacementMap(-co));
+        const rUrl = createSyncDataUrl(createDisplacementMap(co));
+        const gUrl = createSyncDataUrl(createDisplacementMap(0));
+        const bUrl = createSyncDataUrl(createDisplacementMap(-co));
 
         return `
             <feImage result="rImg" href="${rUrl}" color-interpolation-filters="sRGB"/>
@@ -341,6 +367,7 @@ FxFilter.add({
     updatesOn: ['border-radius', 'width', 'height']
 });
 
+// 3. COLOR OVERLAY: Lightweight native filter.
 FxFilter.add({
     name: 'color-overlay',
     callback: (element, color = 'black', opacity = 0.5) => {

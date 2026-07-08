@@ -1,13 +1,12 @@
 <script>
 	import { onMount } from 'svelte'
-	import { typewriter, resetTypewriter } from '$lib/utils/typewriter.js'
+	import { typewriter } from '$lib/utils/typewriter.js'
     import { obelo } from '$lib/utils/obelo';
 
 	let visible = $state(false)
 
 	onMount(() => {
 		if (!localStorage.getItem('cookie-consent')) {
-			resetTypewriter()
 			visible = true
 		}
 	})

@@ -15,14 +15,14 @@
 	import { obeloGrid } from '$lib/utils/obeloGrid.svelte.js'
 	import timing from '$lib/scss/timing.module.scss'
 	import { getPageInfo } from '$lib/utils/pageInfo.svelte.js'
-	import { slideFromLeft } from '$lib/utils/transitions.js'
-
-	const DURATION = parseInt(timing.overlayDuration)
+	import { slideFromLeft, pageOut } from '$lib/utils/transitions.js'
+	import { fade, fly, slide } from 'svelte/transition'
+	import { getInfoText } from '$lib/stores/infoText.svelte.js'
+	const infoText = getInfoText()
 
 	let { data, children } = $props()
-
 	const nav = getPageInfo()
-
+	
 	onMount(() => initGlass())
 </script>
 
@@ -32,26 +32,34 @@
 	<div class="obelo-grid" use:obeloGrid={{cols: 6, rows: 8, loop: true}}></div>
 {/if}
 
-<div id="site-wrapper" data-page={nav.pageName} aria-hidden={!nav.isMobile && (nav.redirecting || data.needsOverlayRedirect)} class:redirecting={!nav.isMobile && (nav.redirecting || data.needsOverlayRedirect)}>
+<div id="site-wrapper" data-page={nav.pageName} aria-hidden={!nav.isMobile && (nav.redirecting || data.needsOverlayRedirect)}
+class:redirecting={!nav.isMobile && (nav.redirecting || data.needsOverlayRedirect)}
+style:--infoTextHeight="{infoText.height + 24}px">
 	{#if nav.showInfo}
-		<div out:slideFromLeft={{ delay: DURATION }}>
-			<Info about={data.about} />
+		<div class="info-wrapper" out:slideFromLeft={{ duration: nav.isMobile ? +timing.overlayDurationMobile : +timing.overlayDuration, delay: nav.isMobile ? +timing.overlayDurationMobile : +timing.overlayDuration }}>
+			<Info about={data.about} scroll={nav.pageName === 'about'}/>
 		</div>
 	{/if}
 
-	<div id="page" class:fullscreen={nav.isFullscreen}>{@render children()}</div>
+	<div id="page" class:fullscreen={nav.isFullscreen}>
+		{#key page.url.pathname}
+			<div out:fade={{ duration: nav.isMobile ? 0 : 0 }}>
+				{@render children()}
+			</div>
+		{/key}
+	</div>
 
 	{#if nav.isOverlay}
 		<div class="info-bg"
 			in:slideFromLeft
-			out:slideFromLeft={{ delay: DURATION }}>
+			out:slideFromLeft={{ duration: nav.isMobile ? +timing.overlayDurationMobile : +timing.overlayDuration, delay: nav.isMobile ? +timing.overlayDurationMobile : +timing.overlayDuration }}>
 		</div>
 		<div class="overlay">
 			{#if page.state.overlay}
 				<div class="panel"
 					data-overlay={page.state.overlay}
 					in:slideFromLeft|global={{ offset: 'var(--infoWidth)' }}
-					out:slideFromLeft|global={{ delay: DURATION, offset: 'var(--infoWidth)' }}>
+					out:slideFromLeft|global={{ duration: nav.isMobile ? +timing.overlayDurationMobile : +timing.overlayDuration, delay: nav.isMobile ? +timing.overlayDurationMobile : +timing.overlayDuration, offset: 'var(--infoWidth)' }}>
 					{#if page.state.overlay === '/works'}
 						<WorksPage data={page.state.overlayData} />
 					{:else if page.state.overlay === '/about'}
@@ -84,6 +92,10 @@
 	#site-wrapper {
 		transition: --bgColor var(--transition), --fgColor var(--transition);
 		transition-delay: var(--overlayDuration);
+
+		@media (orientation: portrait), (width <= #{bp.$md}) {
+			background-color: var(--bgColor);
+		}
 	}
 
 	[data-page='home'],
@@ -93,12 +105,24 @@
 	[data-page='singleEducation'], {
 		--bgColor: var(--black);
 		--fgColor: var(--white);
+
+		@media (orientation: portrait), (width <= #{bp.$md}) {
+			.info-wrapper {
+				color: var(--fgColor);
+			}
+		}
 	}
 	[data-page='about'],
 	[data-page='works'] {
 		--bgColor: var(--white);
 		--fgColor: var(--black);
 		transition-delay: 0ms;
+
+		@media (orientation: portrait), (width <= #{bp.$md}) {
+			.info-wrapper {
+				color: var(--fgColor);
+			}
+		}
 	}
 
 	.redirecting {

@@ -1,11 +1,18 @@
 <script>
 	import EducationSwiper from '$lib/components/EducationSwiper.svelte'
+	import EducationScroll from '$lib/components/EducationScroll.svelte'
+	import { getResponsive } from '$lib/utils/responsive.svelte.js'
 
+	const responsive = getResponsive()
 	let { data } = $props()
 </script>
 
 <main>
-	<EducationSwiper educations={data.educations} slug={data.slug} />
+	{#if responsive.isMobile}
+		<EducationScroll educations={data.educations} slug={data.slug} />
+	{:else}
+		<EducationSwiper educations={data.educations} slug={data.slug} />
+	{/if}
 </main>
 
 <style lang="scss">

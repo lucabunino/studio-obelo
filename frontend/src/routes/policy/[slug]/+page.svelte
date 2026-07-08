@@ -1,21 +1,24 @@
 <script>
 	import { PortableText } from '@portabletext/svelte'
 	import PortableTextStyle from '$lib/components/PortableTextStyle.svelte'
-	import { typewriter, resetTypewriter } from '$lib/utils/typewriter.js'
+	import { typewriter } from '$lib/utils/typewriter.js'
 	import { onMount } from 'svelte'
 	import timing from '$lib/scss/timing.module.scss'
+	const DURATION = +timing.overlayDuration
+	const DURATION_MOBILE = +timing.overlayDurationMobile
+	import { getResponsive } from '$lib/utils/responsive.svelte.js'
 
+	const responsive = getResponsive()
 	let { data } = $props()
 	let loaded = $state(false)
-	const DURATION = parseInt(timing.overlayDuration)
 
-	onMount(() => { resetTypewriter(); const t = setTimeout(() => loaded = true, DURATION*2); return () => clearTimeout(t) })
+	onMount(() => { const t = setTimeout(() => loaded = true, responsive.isMobile ? DURATION_MOBILE : DURATION*2); return () => clearTimeout(t) })
 </script>
 
 {#if loaded}
 <main>
 	<div class="content">
-		<div class="top" in:typewriter out:typewriter|global={{ duration: DURATION, clean: true }}>
+		<div class="top" in:typewriter out:typewriter|global={{ duration: responsive.isMobile ? DURATION_MOBILE : DURATION, clean: true }}>
 			<section>
 				<h1 class="uppercase">{data.policy.title}</h1>
 				<div class="portableText">
@@ -24,6 +27,9 @@
 					components={{
 						block: PortableTextStyle,
 						listItem: PortableTextStyle,
+						types: {
+							break: PortableTextStyle,
+						},
 						marks: {
 							link: PortableTextStyle,
 						}

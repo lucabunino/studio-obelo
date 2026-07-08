@@ -1,21 +1,23 @@
 <script>
 	import { PortableText } from '@portabletext/svelte'
 	import PortableTextStyle from '$lib/components/PortableTextStyle.svelte'
-	import { typewriter, resetTypewriter } from '$lib/utils/typewriter.js'
+	import { typewriter } from '$lib/utils/typewriter.js'
 	import { handleOverlay } from '$lib/utils/overlay.js'
 	import { onDestroy, onMount } from 'svelte'
 	import { obelo } from '$lib/utils/obelo.js'
 	import timing from '$lib/scss/timing.module.scss'
+	const DURATION = +timing.overlayDuration
+	const DURATION_MOBILE = +timing.overlayDurationMobile
     import { beforeNavigate } from '$app/navigation';
+	import { getResponsive } from '$lib/utils/responsive.svelte.js'
 
+	const responsive = getResponsive()
 	let { data } = $props()
 	const about = $derived(data.about)
 	let loaded = $state(false)
-	const DURATION = parseInt(timing.overlayDuration)
 
 	$effect(() => {
-		resetTypewriter();
-		const t = setTimeout(() => loaded = true, DURATION)
+		const t = setTimeout(() => loaded = true, responsive.isMobile ? DURATION_MOBILE : DURATION)
 		return () => clearTimeout(t)
 	})
 </script>
@@ -24,7 +26,19 @@
 	<main>
 		<h1 class="sr-only">About</h1>
 		<div class="content">
-			<div class="top" in:typewriter out:typewriter|global={{ duration: DURATION, clean: true }}>
+			<div class="top" in:typewriter out:typewriter|global={{ duration: responsive.isMobile ? DURATION_MOBILE : DURATION, clean: true }}>
+				{#if about?.description}
+					<section id="description" aria-label="Intro" class="portableText description">
+						<PortableText value={about.description} components={{ block: PortableTextStyle, types: { break: PortableTextStyle }, marks: { link: PortableTextStyle } }} />
+						{#if about?.mail}
+							<a use:obelo class="hover-yellow email" href="mailto:{about.mail}">{about.mail}</a>
+						{/if}
+						{#if about?.instagram}
+							<a use:obelo class="hover-yellow instagram" href={about.instagram.href} target="_blank" rel="noopener noreferrer">{about.instagram.handle}</a>
+						{/if}
+						<div class="separator">÷</div>
+					</section>
+				{/if}
 				{#if about?.team?.length}
 					<section id="team" aria-labelledby="team-heading">
 						<h2 id="team-heading" class="uppercase">Team:</h2>
@@ -96,7 +110,7 @@
 				{#if about?.applications}
 					<section id="applications" aria-label="Applications:">
 						<div class="applications portableText">
-							<PortableText value={about.applications} components={{ block: PortableTextStyle, marks: { link: PortableTextStyle } }} />
+							<PortableText value={about.applications} components={{ block: PortableTextStyle, types: { break: PortableTextStyle }, marks: { link: PortableTextStyle } }} />
 						</div>
 					</section>
 					<div class="separator">÷</div>
@@ -151,11 +165,39 @@
 			padding: var(--sp-12) var(--sp-12) 0;
 			height: 100%;
 
+			@media (orientation: portrait), (width <= #{bp.$md}) {
+				color: var(--black);
+				background-color: var(--white);
+				padding: var(--sp-12) var(--sp-12) var(--sp-120);
+			}
+
 			.top {
 				.separator {
 					margin: var(--sp-12) 0;
 					width: stretch;
 					text-align: center;
+				}
+
+				#description {
+					display: none;
+
+					@media (orientation: portrait), (width <= #{bp.$md}) {
+						display: block;
+					}
+
+					a {
+						display: block;
+						width: fit-content;
+						pointer-events: all;
+
+						&:first-of-type {
+							margin-top: var(--sp-24);
+						}
+
+						&:hover {
+							color: var(--black);
+						}
+					}
 				}
 
 				#team {
@@ -218,6 +260,11 @@
 				flex-shrink: 0;
 				position: sticky;
 				bottom: 0;
+				pointer-events: none;
+
+				@media (orientation: portrait), (width <= #{bp.$md}) {
+					display: none;
+				}
 			}
 		}
 	}

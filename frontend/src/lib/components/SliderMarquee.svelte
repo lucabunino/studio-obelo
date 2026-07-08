@@ -3,8 +3,8 @@
 	import Media from '$lib/components/Media.svelte'
 	import CursorTag from '$lib/components/CursorTag.svelte'
 	import { innerHeight, innerWidth } from 'svelte/reactivity/window'
-	import { getInfoText } from '$lib/stores/infoText.svelte.js'
 	import timing from '$lib/scss/timing.module.scss'
+	import { getResponsive } from '$lib/utils/responsive.svelte.js'
 
 	let { works, separator = false } = $props()
 	let hoveredWork = $state(null)
@@ -21,15 +21,13 @@
 	let loaded = $state(false)
 	let dragDistance = $state(0)
 
-	const DURATION = parseInt(timing.overlayDuration)
-	const FADE_DURATION = parseInt(timing.fadeDuration)
 	const PAUSE_DURATION = 1000
 	const BASE_SPEED = 0.3
 	const FRICTION = .9
 	const START_DELAY = 3000
 
+	const responsive = getResponsive()
 	const isPortrait = $derived(innerHeight.current > innerWidth.current)
-	const infoText = getInfoText()
 
 	$effect(() => {
 		isPortrait
@@ -46,9 +44,9 @@
 			frameId = requestAnimationFrame(loop)
 		}
 		frameId = requestAnimationFrame(loop)
-		const timeout = setTimeout(() => { started = true }, START_DELAY)
-		loaded = true
-		return () => { cancelled = true; cancelAnimationFrame(frameId); clearTimeout(timeout) }
+		const timeout1 = setTimeout(() => { loaded = true }, +timing.overlayDuration)
+		const timeout2 = setTimeout(() => { started = true }, START_DELAY)
+		return () => { cancelled = true; cancelAnimationFrame(frameId); clearTimeout(timeout1); clearTimeout(timeout2) }
 	})
 
 	function update() {
@@ -130,7 +128,7 @@
 
 	const rounded = $derived(Math.round(pos * 100) / 100)
 	const transform = $derived(isPortrait
-		? `translate3d(0, ${rounded}px, 0)`
+		? 'none'
 		: `translate3d(${rounded}px, 0, 0)`)
 </script>
 
@@ -141,21 +139,20 @@
 		tabindex="0"
 		aria-label="Work slider"
 		class="slider-marquee"
-		style:--infoTextHeight="{infoText.height + 24}px"
-		onmousedown={handleMouseDown}
-		onmousemove={handleMouseMove}
-		onmouseup={handleMouseUp}
-		onmouseleave={handleMouseUp}
-		onwheel={handleWheel}
-		ontouchstart={handleTouchStart}
-		ontouchmove={handleTouchMove}
-		ontouchend={handleTouchEnd}
+		onmousedown={isPortrait ? undefined : handleMouseDown}
+		onmousemove={isPortrait ? undefined : handleMouseMove}
+		onmouseup={isPortrait ? undefined : handleMouseUp}
+		onmouseleave={isPortrait ? undefined : handleMouseUp}
+		onwheel={isPortrait ? undefined : handleWheel}
+		ontouchstart={isPortrait ? undefined : handleTouchStart}
+		ontouchmove={isPortrait ? undefined : handleTouchMove}
+		ontouchend={isPortrait ? undefined : handleTouchEnd}
 	>
 		<div
 			class="slider-track"
 			style:transform={transform}
 		>
-			{#each [0, 1] as set}
+			{#each (isPortrait ? [0] : [0, 1]) as set}
 				{#if separator}
 					<div class="separator" aria-hidden="true"></div>
 				{/if}
@@ -168,11 +165,11 @@
 							ondragstart={(e) => e.preventDefault()}
 							onmouseenter={() => hoveredWork = work}
 							onmouseleave={() => hoveredWork = null}
-							in:fly={{ delay: DURATION + i*DURATION/4, duration: DURATION, x: '20vw' }}
-							out:fade|global={{ duration: FADE_DURATION }}
+							in:fly={{ delay: responsive.isMobile ? 0 : +timing.overlayDuration + i*+timing.overlayDuration/4, duration: +timing.overlayDuration, x: isPortrait ? undefined : '20vw', y: isPortrait ? '50vh' : undefined }}
+							out:fade|global={{ duration: responsive.isMobile ? 0 : +timing.fadeDuration }}
 						>
 							{#if work.homepage}
-								<Media media={work.homepage} class="homepage" />
+								<Media media={work.homepage} class="homepage" sizes={(() => { const d = work.homepage?.image?.asset?.metadata?.dimensions ?? work.homepage?.videoPoster?.asset?.metadata?.dimensions; return !d || d.width >= d.height ? '(orientation: portrait) 100vw, 100vh' : `(orientation: portrait) 100vw, ${Math.round(d.width/d.height*100)}vh` })()} />
 							{:else}
 								<div class="missing-homepage" aria-label="Missing homepage asset">
 									<span>missing homepage asset</span>
@@ -206,7 +203,13 @@
 		&:active { cursor: grabbing; }
 
 		@media (orientation: portrait) {
-			touch-action: pan-x;
+			position: relative;
+			overflow: visible;
+			touch-action: auto;
+			cursor: auto;
+			z-index: auto;
+			background-color: var(--bgColor);
+			min-height: 100dvh;
 		}
 	}
 
@@ -239,6 +242,12 @@
 
 	.work {
 		flex-shrink: 0;
+
+		@media (orientation: portrait) {
+			&:last-child {
+				margin-bottom: var(--headerHeight);
+			}
+		}
 	}
 
 	.missing-homepage {

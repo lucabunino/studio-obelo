@@ -1,15 +1,19 @@
-$overlay-duration: 500;
+$overlay-duration: 400;
+$overlay-duration-mobile: 0;
 $transition-duration: 300;
 $typewriter-per-char: .5;
 $fade-duration: 100;
+$fade-duration-mobile: 0;
 $typewriter-hold: 400;
 $typewriter-min-duration: 450;
 
 :export {
 	overlayDuration: $overlay-duration;
+	overlayDurationMobile: $overlay-duration-mobile;
 	transitionDuration: $transition-duration;
 	typewriterPerChar: $typewriter-per-char;
 	fadeDuration: $fade-duration;
+	fadeDurationMobile: $fade-duration-mobile;
 	typewriterHold: $typewriter-hold;
 	typewriterMinDuration: $typewriter-min-duration;
 }
