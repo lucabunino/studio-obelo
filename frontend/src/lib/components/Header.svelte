@@ -26,14 +26,7 @@
 
 {#if loaded}
 	<header in:typewriter={{ duration: 31*15, fade: false, hold: false }} class:no-shadow={hideShadow}>
-		<a use:obelo={{ touch: false }} class="logo ellipsis" href="/">studio òbelo</a>
-		<nav class="menu ellipsis" class:bg={isActive('/works') || isActive('/about')}>
-			{#if loaded}
-				<a use:obelo={{ touch: false }} class="menu-item uppercase ellipsis" href="/works" aria-current={isActive('/works') ? 'page' : undefined} onclick={responsive.isMobile ? undefined : (e) => handleOverlay(e, '/works')}>Works</a>
-				<a use:obelo={{ touch: false }} class="menu-item uppercase ellipsis" href="/about" aria-current={isActive('/about') ? 'page' : undefined} onclick={responsive.isMobile ? undefined : (e) => handleOverlay(e, '/about')}>About</a>
-				<a use:obelo={{ touch: false }} class="menu-item uppercase ellipsis" href="/education" aria-current={isActive('/education') ? 'page' : undefined}>Education</a>
-			{/if}
-		</nav>
+		<a use:obelo class="logo ellipsis" href="/">studio òbelo</a>
 	</header>
 {/if}
 

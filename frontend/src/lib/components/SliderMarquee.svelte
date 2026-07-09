@@ -161,9 +161,8 @@
 				{/if}
 				{#each works as work, i (work._id + set)}
 					{#if loaded}
-						<a
+						<div
 							class="work"
-							href="/works/{work.slug.current}"
 							onclick={handleClick}
 							ondragstart={(e) => e.preventDefault()}
 							onmouseenter={() => hoveredWork = work}
@@ -178,7 +177,7 @@
 									<span>missing homepage asset</span>
 								</div>
 							{/if}
-						</a>
+						</div>
 					{/if}
 				{/each}
 			{/each}

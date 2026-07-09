@@ -6,9 +6,6 @@
 	import Header from '$lib/components/Header.svelte'
 	import CookieBanner from '$lib/components/CookieBanner.svelte'
 	import Info from '$lib/components/Info.svelte'
-	import WorksPage from './works/+page.svelte'
-	import AboutPage from './about/+page.svelte'
-	import PolicyPage from './policy/[slug]/+page.svelte'
 	import { page } from '$app/state'
 	import { onMount } from 'svelte'
 	import { initGlass } from '$lib/utils/glass.js'
@@ -50,40 +47,8 @@ style:--infoTextHeight="{infoText.height}px">
 			<Info about={data.about} scroll={nav.pageName === 'about'}/>
 		</div>
 	{/if}
-
-	<div id="page" class:fullscreen={nav.isFullscreen}>
-		{#key page.url.pathname}
-			<div out:fade={{ duration: nav.isMobile ? 0 : 0 }}>
-				{@render children()}
-			</div>
-		{/key}
-	</div>
-
-	{#if nav.isOverlay}
-		<div class="info-bg"
-			in:slideFromLeft
-			out:slideFromLeft={{ duration: nav.isMobile ? +timing.overlayDurationMobile : +timing.overlayDuration, delay: nav.isMobile ? +timing.overlayDurationMobile : +timing.overlayDuration }}>
-		</div>
-		<div class="overlay">
-			{#if page.state.overlay}
-				<div class="panel"
-					data-overlay={page.state.overlay}
-					in:slideFromLeft|global={{ offset: 'var(--infoWidth)' }}
-					out:slideFromLeft|global={{ duration: nav.isMobile ? +timing.overlayDurationMobile : +timing.overlayDuration, delay: nav.isMobile ? +timing.overlayDurationMobile : +timing.overlayDuration, offset: 'var(--infoWidth)' }}>
-					{#if page.state.overlay === '/works'}
-						<WorksPage data={page.state.overlayData} />
-					{:else if page.state.overlay === '/about'}
-						<AboutPage data={page.state.overlayData} />
-					{:else if page.state.overlay?.startsWith('/policy/')}
-						<PolicyPage data={page.state.overlayData} />
-					{/if}
-				</div>
-			{/if}
-		</div>
-	{/if}
-
+	{@render children()}
 	<Header />
-	<CookieBanner />
 </div>
 
 <svg style="display:none" aria-hidden="true">
