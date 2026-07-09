@@ -46,7 +46,8 @@
 
 		@media (width <= bp.$md) {
 			max-width: unset;
-			left: var(--sp-12);
+			left: var(--sp-6);
+			right: var(--sp-6);
 			bottom: var(--headerHeight);
 		}
 	}
