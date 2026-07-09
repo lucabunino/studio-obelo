@@ -27,6 +27,11 @@
 {#if loaded}
 	<header in:typewriter={{ duration: 31*15, fade: false, hold: false }} class:no-shadow={hideShadow}>
 		<a use:obelo class="logo ellipsis" href="/">studio òbelo</a>
+		<nav class="menu ellipsis" class:bg={isActive('/works') || isActive('/about')}>
+			{#if loaded}
+				<a use:obelo class="menu-item uppercase ellipsis" href="/about" aria-current={isActive('/about') ? 'page' : undefined} onclick={responsive.isMobile ? undefined : (e) => handleOverlay(e, '/about')}>About</a>
+			{/if}
+		</nav>
 	</header>
 {/if}
 
