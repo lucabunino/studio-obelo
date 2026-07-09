@@ -225,7 +225,7 @@
 		contain: layout paint;
 
 		@media (orientation: portrait) {
-			padding: var(--sp-6);
+			padding: var(--sp-6) var(--sp-6) 0;
 			row-gap: var(--sp-4);
 			flex-direction: column;
 			align-items: stretch;
