@@ -44,7 +44,7 @@
 
 <div id="site-wrapper" data-page={nav.pageName} aria-hidden={!nav.isMobile && (nav.redirecting || data.needsOverlayRedirect)}
 class:redirecting={!nav.isMobile && (nav.redirecting || data.needsOverlayRedirect)}
-style:--infoTextHeight="{infoText.height + 24}px">
+style:--infoTextHeight="{infoText.height}px">
 	{#if nav.showInfo}
 		<div class="info-wrapper" out:slideFromLeft={{ duration: nav.isMobile ? +timing.overlayDurationMobile : +timing.overlayDuration, delay: nav.isMobile ? +timing.overlayDurationMobile : +timing.overlayDuration }}>
 			<Info about={data.about} scroll={nav.pageName === 'about'}/>

@@ -57,6 +57,13 @@
 			padding: var(--sp-12) var(--sp-12) 0;
 			height: 100%;
 
+			.top {
+				@media (orientation: portrait), (width <= #{bp.$md}) {
+					padding-bottom: calc(var(--headerHeight) + var(--sp-24));
+				}
+			}
+
+
 			.bottom {
 				background: linear-gradient(to bottom, transparent, var(--bgColor) var(--sp-24));
 				height: calc(var(--headerHeight) + var(--sp-24));

@@ -171,7 +171,7 @@
 			@media (orientation: portrait), (width <= #{bp.$md}) {
 				color: var(--black);
 				background-color: var(--white);
-				padding: var(--sp-12) var(--sp-12) var(--sp-120);
+				padding: var(--sp-12) var(--sp-12) calc(var(--headerHeight) + var(--sp-24));
 			}
 
 			.top {

@@ -224,10 +224,10 @@
 		width: max-content;
 		will-change: transform;
 		contain: layout paint;
-		padding: var(--sp-6);
-		row-gap: var(--sp-4);
 
 		@media (orientation: portrait) {
+			padding: var(--sp-6);
+			row-gap: var(--sp-4);
 			flex-direction: column;
 			align-items: stretch;
 			width: 100%;
@@ -241,7 +241,7 @@
 
 		@media (orientation: portrait) {
 			width: 100%;
-			height: var(--infoTextHeight);
+			height: calc(var(--infoTextHeight) + var(--sp-18));
 		}
 	}
 
