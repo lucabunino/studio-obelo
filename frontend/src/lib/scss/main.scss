@@ -142,8 +142,8 @@ main {
 		position: absolute;
 		left: 0;
 		right: 0;
-		height: 1cap;
-		bottom: calc((1lh - 1cap) / 2 + 0.05em);
+		height: 0.706em; // fixed, not the dynamic `cap` unit — see typography.scss's Nord Fallback comment
+		bottom: calc((1lh - 0.706em) / 2 + 0.05em);
 		background-color: var(--yellow);
 		z-index: -1;
 	}
@@ -156,7 +156,7 @@ main {
 @media (pointer: fine) {
 	.work.hover-yellow:hover {
 		&::before {
-			bottom: calc((1lh - 1cap) / 2 + var(--sp-3));
+			bottom: calc((1lh - 0.706em) / 2 + var(--sp-3));
 		}
 	}
 }
