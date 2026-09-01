@@ -101,6 +101,8 @@ main {
 	}
 }
 
+// TODO: homepage branch drops the box-shadow + ::after border below for a flatter look.
+// Deliberately not ported to stage — decide on its own merits, not as part of a reconciliation pass.
 .glass-1 {
 	backdrop-filter: blur(10px) saturate(1.2);
 	will-change: transform;
