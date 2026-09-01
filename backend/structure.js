@@ -1,20 +1,18 @@
-import {
-	EarthGlobeIcon,
-	HomeIcon,
-	BookIcon,
-	BookmarkIcon,
-	TagsIcon,
-	CaseIcon,
-	UsersIcon,
-	AccessDeniedIcon,
-	SparklesIcon,
-	ProjectsIcon,
-	InfoOutlineIcon,
-	RobotIcon,
-	PinIcon,
-	PresentationIcon,
-	ClockIcon
-} from '@sanity/icons'
+import {EarthGlobeIcon} from '@sanity/icons/EarthGlobe'
+import {HomeIcon} from '@sanity/icons/Home'
+import {BookIcon} from '@sanity/icons/Book'
+import {BookmarkIcon} from '@sanity/icons/Bookmark'
+import {TagsIcon} from '@sanity/icons/Tags'
+import {CaseIcon} from '@sanity/icons/Case'
+import {UsersIcon} from '@sanity/icons/Users'
+import {AccessDeniedIcon} from '@sanity/icons/AccessDenied'
+import {SparklesIcon} from '@sanity/icons/Sparkles'
+import {ProjectsIcon} from '@sanity/icons/Projects'
+import {InfoOutlineIcon} from '@sanity/icons/InfoOutline'
+import {RobotIcon} from '@sanity/icons/Robot'
+import {PinIcon} from '@sanity/icons/Pin'
+import {PresentationIcon} from '@sanity/icons/Presentation'
+import {ClockIcon} from '@sanity/icons/Clock'
 import {orderableDocumentListDeskItem} from '@sanity/orderable-document-list'
 
 export const myStructure = (S, context) => {

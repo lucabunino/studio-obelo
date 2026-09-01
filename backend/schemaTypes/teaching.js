@@ -1,4 +1,4 @@
-import {PresentationIcon} from '@sanity/icons'
+import {PresentationIcon} from '@sanity/icons/Presentation'
 import {orderRankField} from '@sanity/orderable-document-list'
 
 export default {
