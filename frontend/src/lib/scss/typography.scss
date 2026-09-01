@@ -15,11 +15,20 @@
   font-display: block;
 }
 
+@font-face {
+  font-family: "Nord Fallback";
+  src: local("Arial");
+  size-adjust: 97.24%;
+  ascent-override: 96.36%;
+  descent-override: 32.08%;
+  line-gap-override: 0%;
+}
+
 /* Typography */
 .no {
 	&,
 	&-s {
-		font-family: "Nord", Helvetica, Arial, sans-serif;
+		font-family: "Nord", "Nord Fallback", Helvetica, Arial, sans-serif;
 		font-optical-sizing: auto;
 		font-style: normal;
 	}
