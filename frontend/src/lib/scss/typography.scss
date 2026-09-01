@@ -2,14 +2,14 @@
 
 @font-face {
   font-family: "Nord";
-  src: url("/fonts/NordSN-Book.woff2") format("woff2");
+  src: url("$lib/assets/fonts/NordSN-Book.woff2") format("woff2");
   font-weight: 350;
   font-style: normal;
   font-display: block;
 }
 @font-face {
   font-family: "Nord";
-  src: url("/fonts/NordSN-BookItalic.woff2") format("woff2");
+  src: url("$lib/assets/fonts/NordSN-BookItalic.woff2") format("woff2");
   font-weight: 350;
   font-style: italic;
   font-display: block;
