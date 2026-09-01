@@ -1,4 +1,5 @@
 <script>
+	import { dev } from '$app/environment'
 	import { page } from '$app/state'
 	import { urlFor } from '$lib/utils/image.js'
 
@@ -46,6 +47,10 @@
 	<link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png" />
 	<meta name="apple-mobile-web-app-title" content="studio òbelo" />
 	<link rel="manifest" href="/favicon/site.webmanifest" />
+
+	{#if !dev}
+		<script defer src="https://cloud.umami.is/script.js" data-website-id="27a81995-e729-43a1-994f-58a1e97a38ac"></script>
+	{/if}
 
 	{#if displayTitle}
 		<title>{displayTitle}</title>
