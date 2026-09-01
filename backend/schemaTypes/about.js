@@ -1,4 +1,5 @@
-import {InfoOutlineIcon, StarIcon} from '@sanity/icons'
+import {InfoOutlineIcon} from '@sanity/icons/InfoOutline'
+import {StarIcon} from '@sanity/icons/Star'
 import wysiwyg from './fields/wysiwyg'
 
 export default {

@@ -1,4 +1,4 @@
-import {SparkleIcon} from '@sanity/icons'
+import {SparkleIcon} from '@sanity/icons/Sparkle'
 
 export default {
 	name: 'service',

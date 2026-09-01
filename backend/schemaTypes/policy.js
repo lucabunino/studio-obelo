@@ -1,4 +1,4 @@
-import {AccessDeniedIcon} from '@sanity/icons'
+import {AccessDeniedIcon} from '@sanity/icons/AccessDenied'
 import wysiwyg from './fields/wysiwyg'
 
 export default {

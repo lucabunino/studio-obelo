@@ -1,4 +1,6 @@
-import {TextIcon, ImageIcon, LinkIcon} from '@sanity/icons'
+import {TextIcon} from '@sanity/icons/Text'
+import {ImageIcon} from '@sanity/icons/Image'
+import {LinkIcon} from '@sanity/icons/Link'
 import {mediaFields} from './fields/media'
 import wysiwyg from './fields/wysiwyg'
 

@@ -1,5 +1,5 @@
 import {orderRankField} from '@sanity/orderable-document-list'
-import {SquareIcon} from '@sanity/icons'
+import {SquareIcon} from '@sanity/icons/Square'
 import {status} from './fields/status'
 import wysiwyg from './fields/wysiwyg'
 import {media} from './fields/media'

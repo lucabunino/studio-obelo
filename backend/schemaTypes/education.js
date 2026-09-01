@@ -1,5 +1,5 @@
 import {orderRankField} from '@sanity/orderable-document-list'
-import {BookmarkIcon} from '@sanity/icons'
+import {BookmarkIcon} from '@sanity/icons/Bookmark'
 import {status} from './fields/status'
 import wysiwyg from './fields/wysiwyg'
 import {mediaFields} from './fields/media'

@@ -1,4 +1,4 @@
-import {EnterIcon} from '@sanity/icons'
+import {EnterIcon} from '@sanity/icons/Enter'
 
 export default function wysiwyg(fieldName, groupName) {
 	return {

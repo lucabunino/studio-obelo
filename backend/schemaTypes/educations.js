@@ -1,4 +1,5 @@
-import {BookIcon, InlineElementIcon} from '@sanity/icons'
+import {BookIcon} from '@sanity/icons/Book'
+import {InlineElementIcon} from '@sanity/icons/InlineElement'
 import wysiwyg from './fields/wysiwyg'
 
 export default {
