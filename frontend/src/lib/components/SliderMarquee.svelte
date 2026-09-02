@@ -20,6 +20,8 @@
 	let started = $state(false)
 	let loaded = $state(false)
 	let dragDistance = $state(0)
+	let isScrolling = $state(false)
+	let wheelEndTimer
 
 	const PAUSE_DURATION = 1000
 	const BASE_SPEED = 0.3
@@ -73,6 +75,7 @@
 
 	function handleMouseDown(e) {
 		isDragging = true
+		isScrolling = true
 		lastInteractionTime = Date.now()
 		startPos = getEventPos(e) - pos
 		velocity = 0
@@ -93,14 +96,32 @@
 	function handleMouseUp() {
 		if (!isDragging) return
 		isDragging = false
+		isScrolling = false
 		lastInteractionTime = Date.now()
 		velocity *= 1.2
+	}
+	function handleContainerLeave() {
+		handleMouseUp()
+		hoveredWork = null
+	}
+
+	let hoverToken = 0
+	function handleWorkEnter(work) {
+		hoverToken++
+		hoveredWork = work
+	}
+	function handleWorkLeave() {
+		const token = ++hoverToken
+		queueMicrotask(() => {
+			if (token === hoverToken) hoveredWork = null
+		})
 	}
 	function handleClick(e) {
 		if (dragDistance > 5) e.preventDefault()
 	}
 	function handleTouchStart(e) {
 		isDragging = true
+		isScrolling = true
 		lastInteractionTime = Date.now()
 		const p = getTouchPos(e)
 		startPos = p - pos
@@ -123,6 +144,9 @@
 	function handleWheel(e) {
 		e.preventDefault()
 		lastInteractionTime = Date.now()
+		isScrolling = true
+		clearTimeout(wheelEndTimer)
+		wheelEndTimer = setTimeout(() => { isScrolling = false }, 150)
 		const delta = isPortrait
 			? (Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX)
 			: (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY)
@@ -145,7 +169,7 @@
 		onmousedown={isPortrait ? undefined : handleMouseDown}
 		onmousemove={isPortrait ? undefined : handleMouseMove}
 		onmouseup={isPortrait ? undefined : handleMouseUp}
-		onmouseleave={isPortrait ? undefined : handleMouseUp}
+		onmouseleave={isPortrait ? undefined : handleContainerLeave}
 		onwheel={isPortrait ? undefined : handleWheel}
 		ontouchstart={isPortrait ? undefined : handleTouchStart}
 		ontouchmove={isPortrait ? undefined : handleTouchMove}
@@ -166,8 +190,8 @@
 							href="/works/{work.slug.current}"
 							onclick={handleClick}
 							ondragstart={(e) => e.preventDefault()}
-							onmouseenter={() => hoveredWork = work}
-							onmouseleave={() => hoveredWork = null}
+							onmouseenter={() => handleWorkEnter(work)}
+							onmouseleave={handleWorkLeave}
 							in:fly={{ delay: responsive.isMobile ? 0 : +timing.overlayDuration + i*+timing.overlayDuration/4, duration: +timing.overlayDuration, x: isPortrait ? undefined : '20vw', y: isPortrait ? '50vh' : undefined }}
 							out:fade|global={{ duration: isMobileSnapshot ? 0 : +timing.fadeDuration }}
 						>
@@ -185,12 +209,14 @@
 		</div>
 	</div>
 
-{#if hoveredWork}
-	<CursorTag
-		title={hoveredWork.title}
-		subtitle={hoveredWork.services?.map(s => s.title).join(', ')}
-		year={hoveredWork.ongoing ? 'Ongoing' : [hoveredWork.startDate?.slice(0, 4), hoveredWork.endDate?.slice(0, 4)].filter(Boolean).join('–')}
-	/>
+{#if hoveredWork && !isScrolling}
+	{#key hoveredWork._id}
+		<CursorTag
+			title={hoveredWork.title}
+			subtitle={hoveredWork.services?.map(s => s.title).join(', ')}
+			year={hoveredWork.ongoing ? 'Ongoing' : [hoveredWork.startDate?.slice(0, 4), hoveredWork.endDate?.slice(0, 4)].filter(Boolean).join('–')}
+		/>
+	{/key}
 {/if}
 
 <style lang="scss">
@@ -224,6 +250,7 @@
 		width: max-content;
 		will-change: transform;
 		contain: layout paint;
+		column-gap: var(--sp-4);
 
 		@media (orientation: portrait) {
 			padding: var(--sp-6) var(--sp-6) 0;

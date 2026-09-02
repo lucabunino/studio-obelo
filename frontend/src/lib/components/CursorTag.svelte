@@ -1,7 +1,9 @@
 <script>
     import { typewriter } from '$lib/utils/typewriter';
+    import { fade, slide } from 'svelte/transition';
     import { onMount } from 'svelte';
 	import { innerWidth } from 'svelte/reactivity/window'
+	import timing from '$lib/scss/timing.module.scss'
 
 	let { title, subtitle, year, arrow } = $props()
 
@@ -68,6 +70,7 @@
 	<span
 		bind:this={arrowEl}
 		class="cursor-line yellow"
+
 		style="left: {clampCenter(arrowMirrorEl, mouseX)}px; top: {getArrowTop()}px; transform: translateX(-50%)"
 	>{arrow}</span>
 {/if}
@@ -75,7 +78,8 @@
 	{#if loaded && mouseX !== null}
 		<span
 			bind:this={els[i]}
-			in:typewriter={{ duration: line.length*15, fade: false, hold: false }}
+			in:typewriter={{ duration: line.length*15, delay: i*timing.fadeDuration/2, fade: false, hold: false }}
+
 			class="cursor-line yellow"
 			style="left: {clampCenter(mirrorEls[i], mouseX)}px; top: {getTop(i)}px; transform: translateX(-50%)"
 		>{line}</span>
