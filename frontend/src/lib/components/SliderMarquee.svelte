@@ -104,18 +104,6 @@
 		handleMouseUp()
 		hoveredWork = null
 	}
-
-	let hoverToken = 0
-	function handleWorkEnter(work) {
-		hoverToken++
-		hoveredWork = work
-	}
-	function handleWorkLeave() {
-		const token = ++hoverToken
-		queueMicrotask(() => {
-			if (token === hoverToken) hoveredWork = null
-		})
-	}
 	function handleClick(e) {
 		if (dragDistance > 5) e.preventDefault()
 	}
@@ -190,8 +178,8 @@
 							href="/works/{work.slug.current}"
 							onclick={handleClick}
 							ondragstart={(e) => e.preventDefault()}
-							onmouseenter={() => handleWorkEnter(work)}
-							onmouseleave={handleWorkLeave}
+							onmouseenter={() => hoveredWork = work}
+							onmouseleave={() => hoveredWork = null}
 							in:fly={{ delay: responsive.isMobile ? 0 : +timing.overlayDuration + i*+timing.overlayDuration/4, duration: +timing.overlayDuration, x: isPortrait ? undefined : '20vw', y: isPortrait ? '50vh' : undefined }}
 							out:fade|global={{ duration: isMobileSnapshot ? 0 : +timing.fadeDuration }}
 						>
