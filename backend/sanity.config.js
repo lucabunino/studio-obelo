@@ -13,6 +13,7 @@ export default defineConfig({
 	dataset: 'production',
 
 	releases: {enabled: isDev},
+	scheduledDrafts: {enabled: isDev},
 
 	plugins: [
 		structureTool({structure: myStructure}),
