@@ -1,5 +1,5 @@
 import {myStructure} from './structure'
-import {defineConfig} from 'sanity'
+import {defineConfig, isDev} from 'sanity'
 import {structureTool} from 'sanity/structure'
 import {visionTool} from '@sanity/vision'
 import {schemaTypes} from './schemaTypes'
@@ -12,9 +12,11 @@ export default defineConfig({
 	projectId: 'h2xygxe5',
 	dataset: 'production',
 
+	releases: {enabled: isDev},
+
 	plugins: [
 		structureTool({structure: myStructure}),
-		visionTool(),
+		...(isDev ? [visionTool()] : []),
 		media(),
 	],
 
